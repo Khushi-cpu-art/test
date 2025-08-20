@@ -26,23 +26,19 @@ jobs:
     - name: Run Selenium test
       run: npm test
 
-    - name: Upload screenshots
+    - name: Zip Mochawesome Report
+      if: always()
+      run: |
+        powershell Compress-Archive -Path mochawesome-report/* -DestinationPath report.zip
+
+    - name: Upload zipped report
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: screenshots
-        path: |
-          screenshot_01.png
-          screenshot_02.png
+        name: zipped-report
+        path: report.zip
 
-    - name: Upload Mochawesome HTML Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: mochawesome-report
-        path: mochawesome-report/mochawesome.html
-
-    - name: Email report and screenshots
+    - name: Email zipped report
       if: always()
       uses: dawidd6/action-send-mail@v3
       with:
@@ -58,11 +54,9 @@ jobs:
 
           Your Selenium test has completed.
 
-          The HTML report and screenshots are attached.
+          Please find the full Mochawesome HTML report with embedded screenshots attached as a ZIP file.
 
-          Regards,
+          Regards,  
           GitHub Actions
         attachments: |
-          mochawesome-report/mochawesome.html
-          screenshot_01.png
-          screenshot_02.png
+          report.zip
