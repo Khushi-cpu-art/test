@@ -2,9 +2,9 @@ name: Run Selenium Test with Email Report
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -12,40 +12,60 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
 
-    - name: Run Selenium test
-      run: mocha test.js --reporter mochawesome --reporter-options inlineAssets=true
+      - name: Show Chrome version
+        run: google-chrome --version
 
-    - name: Upload Mochawesome HTML Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: mochawesome-report
-        path: mochawesome-report/mochawesome.html
+      - name: Install dependencies
+        run: npm install
 
-    - name: Email report
-      if: always()
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: smtp.gmail.com
-        server_port: 587
-        username: ${{ secrets.EMAIL_USERNAME }}
-        password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: Selenium Test Results - ${{ github.repository }}
-        to: ${{ secrets.EMAIL_TO }}
-        from: ${{ secrets.EMAIL_USERNAME }}
-        body: |
-          Hello,
-          Your Selenium test has completed.
-          The HTML report is attached.
-        attachments: mochawesome-report/mochawesome.html
+      - name: Run Selenium test
+        run: npm test
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: mochawesome-report/screenshot_01.png
+
+      - name: Upload Mochawesome HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mochawesome-report
+          path: mochawesome-report/mochawesome.html
+
+      - name: Email report and screenshots
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Selenium Test Results - ${{ github.repository }}
+          to: ${{ secrets.EMAIL_TO }}
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            Hello,
+
+            Your Selenium test has completed.
+
+            The HTML report and screenshots are attached.
+
+            Regards,
+            GitHub Actions
+          attachments: |
+            mochawesome-report/mochawesome.html
+            mochawesome-report/screenshot_01.png
