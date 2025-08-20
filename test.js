@@ -1,28 +1,19 @@
-const { Builder } = require('selenium-webdriver');
+const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
+require('chromedriver');  // Load chromedriver from node_modules
+
+// Set chromedriver service
+const service = new chrome.ServiceBuilder(require('chromedriver').path).build();
+chrome.setDefaultService(service);
 
 describe('Selenium Screenshot Test', function () {
-  this.timeout(30000);
+  this.timeout(60000); // 60 seconds timeout
   let driver;
 
-  // Helper function to save screenshots
-  async function saveScreenshot(driver, filename) {
-    const image = await driver.takeScreenshot();
-    await fs.writeFile(path.join(__dirname, filename), image, 'base64');
-  }
-
   before(async function () {
-    // Setup ChromeDriver using the local chromedriver.exe
-    const service = new chrome.ServiceBuilder('./chromedriver.exe');
-    const options = new chrome.Options();
-
-    driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(options)
-      .setChromeService(service)
-      .build();
+    driver = await new Builder().forBrowser('chrome').setChromeOptions(new chrome.Options().headless()).build();
   });
 
   after(async function () {
@@ -32,15 +23,15 @@ describe('Selenium Screenshot Test', function () {
   });
 
   it('Should load page and take screenshots', async function () {
-    // Navigate to the page
     await driver.get('https://theysaidso.com/');
-    await driver.manage().window().setRect({ width: 1054, height: 800 });
 
-    // Take screenshot before scroll
-    await saveScreenshot(driver, 'screenshot_01.png');
+    // Take screenshot 1
+    let screenshot1 = await driver.takeScreenshot();
+    fs.writeFileSync(path.join(__dirname, 'screenshot_01.png'), screenshot1, 'base64');
 
-    // Scroll down and take another screenshot
-    await driver.executeScript('window.scrollTo(0,512)');
-    await saveScreenshot(driver, 'screenshot_02.png');
+    // Scroll down and take screenshot 2
+    await driver.executeScript('window.scrollTo(0, 500);');
+    let screenshot2 = await driver.takeScreenshot();
+    fs.writeFileSync(path.join(__dirname, 'screenshot_02.png'), screenshot2, 'base64');
   });
 });
