@@ -1,9 +1,9 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs').promises;
 const path = require('path');
 
-describe('yesttt', function () {
+describe('test', function () {
   this.timeout(30000);
   let driver;
 
@@ -13,18 +13,23 @@ describe('yesttt', function () {
   }
 
   beforeEach(async function () {
-    // Use chromedriver from local file
-    const service = new chrome.ServiceBuilder('./chromedriver.exe').build();
-    chrome.setDefaultService(service);
-
-    driver = await new Builder().forBrowser('chrome').build();
+    // Provide the chromedriver path using chrome.Options
+    const options = new chrome.Options();
+    const service = new chrome.ServiceBuilder('./chromedriver.exe');
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .setChromeService(service)
+      .build();
   });
 
   afterEach(async function () {
-    await driver.quit();
+    if (driver) {
+      await driver.quit();
+    }
   });
 
-  it('yesttt', async function () {
+  it('test', async function () {
     await driver.get("https://theysaidso.com/");
     await driver.manage().window().setRect({ width: 1054, height: 800 });
 
