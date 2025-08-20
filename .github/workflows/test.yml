@@ -1,68 +1,26 @@
-name: Run Selenium Test with Email Report
+- name: Run Selenium test
+  run: mocha test.js --reporter mochawesome --reporter-options inlineAssets=true
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+- name: Upload Mochawesome HTML Report
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: mochawesome-report
+    path: mochawesome-report/mochawesome.html
 
-jobs:
-  test:
-    runs-on: windows-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Run Selenium test
-      run: npm test
-
-    - name: Zip Mochawesome Report
-      if: always()
-      run: |
-        powershell Compress-Archive -Path mochawesome-report\* -DestinationPath report.zip
-
-    - name: Rename zip to .safezip
-      if: always()
-      run: |
-        move report.zip report.safezip
-
-    - name: Upload zipped report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: zipped-report
-        path: report.safezip
-
-    - name: Email .safezip report
-      if: always()
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: smtp.gmail.com
-        server_port: 587
-        username: ${{ secrets.EMAIL_USERNAME }}
-        password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: Selenium Test Results - ${{ github.repository }}
-        to: ${{ secrets.EMAIL_TO }}
-        from: ${{ secrets.EMAIL_USERNAME }}
-        body: |
-          Hello,
-
-          Your Selenium test has completed successfully.
-
-          The full Mochawesome report with screenshots is attached as a `.safezip` file.
-          Please rename it back to `.zip` after downloading to view the report.
-
-          Regards,  
-          GitHub Actions
-        attachments: |
-          report.safezip
+- name: Email report
+  if: always()
+  uses: dawidd6/action-send-mail@v3
+  with:
+    server_address: smtp.gmail.com
+    server_port: 587
+    username: ${{ secrets.EMAIL_USERNAME }}
+    password: ${{ secrets.EMAIL_PASSWORD }}
+    subject: Selenium Test Results - ${{ github.repository }}
+    to: ${{ secrets.EMAIL_TO }}
+    from: ${{ secrets.EMAIL_USERNAME }}
+    body: |
+      Hello,
+      Your Selenium test has completed.
+      The HTML report is attached.
+    attachments: mochawesome-report/mochawesome.html
