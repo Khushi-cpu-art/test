@@ -1,26 +1,51 @@
-- name: Run Selenium test
-  run: mocha test.js --reporter mochawesome --reporter-options inlineAssets=true
+name: Run Selenium Test with Email Report
 
-- name: Upload Mochawesome HTML Report
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: mochawesome-report
-    path: mochawesome-report/mochawesome.html
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
-- name: Email report
-  if: always()
-  uses: dawidd6/action-send-mail@v3
-  with:
-    server_address: smtp.gmail.com
-    server_port: 587
-    username: ${{ secrets.EMAIL_USERNAME }}
-    password: ${{ secrets.EMAIL_PASSWORD }}
-    subject: Selenium Test Results - ${{ github.repository }}
-    to: ${{ secrets.EMAIL_TO }}
-    from: ${{ secrets.EMAIL_USERNAME }}
-    body: |
-      Hello,
-      Your Selenium test has completed.
-      The HTML report is attached.
-    attachments: mochawesome-report/mochawesome.html
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run Selenium test
+      run: mocha test.js --reporter mochawesome --reporter-options inlineAssets=true
+
+    - name: Upload Mochawesome HTML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: mochawesome-report
+        path: mochawesome-report/mochawesome.html
+
+    - name: Email report
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: Selenium Test Results - ${{ github.repository }}
+        to: ${{ secrets.EMAIL_TO }}
+        from: ${{ secrets.EMAIL_USERNAME }}
+        body: |
+          Hello,
+          Your Selenium test has completed.
+          The HTML report is attached.
+        attachments: mochawesome-report/mochawesome.html
