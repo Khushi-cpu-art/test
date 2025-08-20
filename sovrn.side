@@ -1,0 +1,111 @@
+{
+    "id": "e1a970c1-5c39-4a78-b92e-5b6eba822db4",
+    "version": "2.0",
+    "name": "https://sovrn.co/115myze",
+    "url": "https://www.nykaa.com",
+    "tests": [
+        {
+            "id": "e0b63f03-0548-4fb8-bff9-d32650a9ac23",
+            "name": "1",
+            "timeout": 180000,
+            "commands": [
+                {
+                    "id": "737e8f17-4e30-4ca2-8770-b89e03d700fb",
+                    "comment": "",
+                    "command": "open",
+                    "target": "/",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "058c28ed-c764-43a6-8771-ffc5cd77f685",
+                    "comment": "",
+                    "command": "setWindowSize",
+                    "target": "1054x800",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "d82d755a-82dd-47d2-b47e-2462098722d4",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,432.79998779296875)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "eb0d87d9-fb3d-4b0c-8b0b-c2cd71a35a00",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,968.7999877929688)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "0d9debfd-5dd0-4e59-9819-36226409d142",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,1331.199951171875)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "29e53775-6e05-43b6-b1ae-2797998d1011",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,1642.4000244140625)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "19832510-bbf8-4f8c-b9ef-de0bda78ab9c",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,1708)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "a8d844b1-681b-4347-a028-6b210a7ee470",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,1995.199951171875)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "859669ec-84e0-4608-b7f7-596a2e80ad0e",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,2488)",
+                    "targets": [],
+                    "value": ""
+                },
+                {
+                    "id": "09cd7adb-c45b-4946-83ab-9c271ecb1298",
+                    "comment": "",
+                    "command": "runScript",
+                    "target": "window.scrollTo(0,856)",
+                    "targets": [],
+                    "value": ""
+                }
+            ]
+        }
+    ],
+    "suites": [
+        {
+            "id": "0418e6c2-5824-41d2-9195-2bfd8742550a",
+            "name": "Default Suite",
+            "persistSession": false,
+            "parallel": false,
+            "timeout": 300,
+            "tests": [
+                "e0b63f03-0548-4fb8-bff9-d32650a9ac23"
+            ]
+        }
+    ],
+    "urls": [
+        "https://www.nykaa.com/"
+    ],
+    "plugins": []
+}
