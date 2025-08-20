@@ -1,4 +1,5 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -8,13 +9,22 @@ describe('Selenium Screenshot Test', function() {
   let driver;
 
   before(async () => {
+    // Create unique temp user data dir for this session
+    const userDataDir = path.resolve(__dirname, 'chrome-user-data-' + Date.now());
+
+    let options = new chrome.Options();
+    options.addArguments(`--user-data-dir=${userDataDir}`);
+
     driver = await new Builder()
       .forBrowser('chrome')
+      .setChromeOptions(options)
       .build();
   });
 
   after(async () => {
-    await driver.quit();
+    if (driver) {
+      await driver.quit();
+    }
   });
 
   it('Should load page and take screenshot', async function() {
