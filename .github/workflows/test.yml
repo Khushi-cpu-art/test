@@ -18,13 +18,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'    # Use Node.js 20 for compatibility with latest selenium-webdriver
+          node-version: '20'
 
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
 
       - name: Show Chrome version
         run: google-chrome --version
+
+      - name: Kill Chrome processes (cleanup)
+        run: |
+          pkill -f chrome || true
 
       - name: Install dependencies
         run: npm install
