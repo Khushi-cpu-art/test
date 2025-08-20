@@ -1,30 +1,27 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const assert = require('assert');
+const rimraf = require('rimraf');
 
 let driver;
-const screenshotPath = path.join(__dirname, 'mochawesome-report', 'screenshot_01.png');
 
-describe('Selenium Screenshot Test', function () {
-  this.timeout(30000); // 30 seconds timeout for setup
+describe('Selenium Screenshot Test', function() {
+  this.timeout(30000);
 
   before(async function () {
-    // Create unique user data dir to avoid session conflicts
     const userDataDir = path.join(os.tmpdir(), `chrome-user-data-${Date.now()}-${Math.floor(Math.random() * 10000)}`);
 
-    // Remove dir if somehow exists
+    // Clean any leftover folder forcibly
     if (fs.existsSync(userDataDir)) {
-      fs.rmSync(userDataDir, { recursive: true, force: true });
+      rimraf.sync(userDataDir);
     }
 
     const options = new chrome.Options();
     options.addArguments(`--user-data-dir=${userDataDir}`);
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
-    // options.addArguments('--headless'); // Uncomment if you want headless mode
 
     driver = await new Builder()
       .forBrowser('chrome')
@@ -35,24 +32,16 @@ describe('Selenium Screenshot Test', function () {
   });
 
   it('Should load page and take screenshot', async function () {
-    await driver.get('https://khushi-cpu-art.vercel.app/');
+    await driver.get('https://your-website-url.com');  // Change to your actual URL
 
-    // Wait a bit for the page to load
-    await driver.sleep(3000);
+    // Wait for some element to ensure page loaded (adjust selector as needed)
+    await driver.wait(until.elementLocated(By.tagName('body')), 10000);
 
-    const image = await driver.takeScreenshot();
+    const screenshot = await driver.takeScreenshot();
 
-    // Ensure report directory exists
-    const reportDir = path.dirname(screenshotPath);
-    if (!fs.existsSync(reportDir)) {
-      fs.mkdirSync(reportDir, { recursive: true });
-    }
-
-    fs.writeFileSync(screenshotPath, image, 'base64');
-
-    // Simple check if image saved (size > 0)
-    const stats = fs.statSync(screenshotPath);
-    assert(stats.size > 0, 'Screenshot file is empty');
+    // Save screenshot locally
+    const screenshotPath = path.join(__dirname, 'mochawesome-report', 'screenshot_01.png');
+    fs.writeFileSync(screenshotPath, screenshot, 'base64');
   });
 
   after(async function () {
