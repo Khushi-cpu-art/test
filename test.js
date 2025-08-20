@@ -1,8 +1,8 @@
 const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const path = require('path');
-const os = require('os');
 const fs = require('fs');
+const os = require('os');
 const assert = require('assert');
 
 describe('Selenium Screenshot Test', function() {
@@ -10,11 +10,16 @@ describe('Selenium Screenshot Test', function() {
   this.timeout(30000);
 
   before(async function() {
-    // Create a unique temp directory for user data dir
-    const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chrome-user-data-'));
+    // Create a unique temporary directory for Chrome user data
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chrome-user-data-'));
 
     let options = new chrome.Options();
-    options.addArguments(`--user-data-dir=${userDataDir}`);
+    options.addArguments(
+      '--headless=new', // Use headless mode (new Chrome headless)
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+      `--user-data-dir=${tmpDir}`
+    );
 
     driver = await new Builder()
       .forBrowser('chrome')
