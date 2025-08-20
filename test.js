@@ -1,22 +1,32 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const rimraf = require('rimraf');
+const fs = require('fs');
 const path = require('path');
+
+const rimraf = require('rimraf');
 
 describe('Selenium Screenshot Test', function () {
   this.timeout(30000);
 
   let driver;
-  const userDataDir = path.join(__dirname, 'tmp-chrome-profile');
+  const userDataDir = path.join(__dirname, 'tmp-chrome-profile-' + Date.now());
 
   before(async function () {
-    // Clear previous profile data if any
-    rimraf.sync(userDataDir);
+    // Cleanup previous profiles (optional, may fail if none)
+    try {
+      rimraf.sync(path.join(__dirname, 'tmp-chrome-profile-*'));
+    } catch {}
+
+    // Make sure folder does not exist (or create it)
+    if (!fs.existsSync(userDataDir)) {
+      fs.mkdirSync(userDataDir, { recursive: true });
+    }
 
     const options = new chrome.Options()
-      .addArguments(`--user-data-dir=${userDataDir}`) // Unique Chrome user data dir
+      .addArguments(`--user-data-dir=${userDataDir}`)
       .addArguments('--no-sandbox')
-      .addArguments('--disable-dev-shm-usage');
+      .addArguments('--disable-dev-shm-usage')
+      .addArguments('--headless=new');
 
     driver = await new Builder()
       .forBrowser('chrome')
@@ -25,10 +35,9 @@ describe('Selenium Screenshot Test', function () {
   });
 
   it('Should load page and take screenshot', async function () {
-    await driver.get('https://example.com'); // Change to your target URL
-
+    await driver.get('https://example.com'); // Replace with your URL
     const screenshot = await driver.takeScreenshot();
-    const fs = require('fs');
+
     const screenshotPath = path.join(__dirname, 'mochawesome-report', 'screenshot_01.png');
 
     if (!fs.existsSync(path.dirname(screenshotPath))) {
