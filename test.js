@@ -1,47 +1,50 @@
-const { Builder, By } = require('selenium-webdriver');
-const assert = require('assert');
+const { Builder, By, until } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
 
-describe('Selenium Screenshot Test', function () {
+describe('Selenium Screenshot Test', function() {
+  this.timeout(30000); // 30 seconds timeout for setup and test
+
   let driver;
+  const screenshotPath = path.join(__dirname, 'mochawesome-report', 'screenshot_01.png');
 
-  before(async function () {
-    driver = await new Builder().forBrowser('chrome').build();
+  before(async function() {
+    // Chrome options with no user-data-dir to avoid session issues
+    const options = new chrome.Options();
+    // Add headless if needed: options.headless();
+
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
+
+    await driver.manage().window().setRect({ width: 1200, height: 800 });
+
+    // Navigate to your desired URL (replace with your actual test URL)
+    await driver.get('https://khushi-cpu-art.vercel.app/');
   });
 
-  after(async function () {
-    if (driver) {
-      await driver.quit();
-    }
-  });
-
-  it('Should load page and take screenshot', async function () {
-    await driver.get('https://theysaidso.com');
-
-    const title = await driver.getTitle();
-    assert.ok(title.includes('They Said So'), 'Page title does not include "They Said So"');
+  it('Should load page and take screenshot', async function() {
+    // Wait until body element is loaded
+    await driver.wait(until.elementLocated(By.css('body')), 10000);
 
     // Take screenshot
-    const screenshotBase64 = await driver.takeScreenshot();
+    const image = await driver.takeScreenshot();
 
-    // Save screenshot to file (optional)
-    const screenshotDir = path.resolve(__dirname, 'mochawesome-report');
-    fs.mkdirSync(screenshotDir, { recursive: true });
-    const screenshotPath = path.join(screenshotDir, 'screenshot_01.png');
-    fs.writeFileSync(screenshotPath, screenshotBase64, 'base64');
+    // Ensure directory exists
+    fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
 
-    // Attach inline image to mochawesome report
-    if (this.test && this.test.context) {
-      this.test.context.attach = {
-        title: 'Screenshot',
-        value: `<img src="data:image/png;base64,${screenshotBase64}" width="600"/>`,
-      };
-    } else if (this.test) {
-      this.test.context = {
-        title: 'Screenshot',
-        value: `<img src="data:image/png;base64,${screenshotBase64}" width="600"/>`,
-      };
+    // Save screenshot as PNG file
+    fs.writeFileSync(screenshotPath, image, 'base64');
+
+    // Attach screenshot to Mochawesome report
+    this.test.context = `![Screenshot](./screenshot_01.png)`;
+  });
+
+  after(async function() {
+    if (driver) {
+      await driver.quit();
     }
   });
 });
