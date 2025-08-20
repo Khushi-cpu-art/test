@@ -1,4 +1,3 @@
-
 const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
@@ -26,11 +25,15 @@ describe('Selenium Screenshot Test', function () {
   });
 
   it('Should load page and take screenshot', async function () {
-    const screenshotPath = path.resolve(__dirname, 'mochawesome-report', 'screenshot.png');
     const screenshot = await driver.takeScreenshot();
+    const screenshotPath = path.resolve(__dirname, 'mochawesome-report', 'screenshot.png');
+
     fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
     fs.writeFileSync(screenshotPath, screenshot, 'base64');
     console.log(`Screenshot saved to ${screenshotPath}`);
+
+    // Embed screenshot inline in mochawesome report
+    this.test.context = `data:image/png;base64,${screenshot}`;
   });
 
   after(async function () {
