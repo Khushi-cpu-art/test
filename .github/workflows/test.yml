@@ -29,16 +29,21 @@ jobs:
     - name: Zip Mochawesome Report
       if: always()
       run: |
-        powershell Compress-Archive -Path mochawesome-report/* -DestinationPath report.zip
+        powershell Compress-Archive -Path mochawesome-report\* -DestinationPath report.zip
+
+    - name: Rename zip to .safezip
+      if: always()
+      run: |
+        move report.zip report.safezip
 
     - name: Upload zipped report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: zipped-report
-        path: report.zip
+        path: report.safezip
 
-    - name: Email zipped report
+    - name: Email .safezip report
       if: always()
       uses: dawidd6/action-send-mail@v3
       with:
@@ -52,11 +57,12 @@ jobs:
         body: |
           Hello,
 
-          Your Selenium test has completed.
+          Your Selenium test has completed successfully.
 
-          Please find the full Mochawesome HTML report with embedded screenshots attached as a ZIP file.
+          The full Mochawesome report with screenshots is attached as a `.safezip` file.
+          Please rename it back to `.zip` after downloading to view the report.
 
           Regards,  
           GitHub Actions
         attachments: |
-          report.zip
+          report.safezip
