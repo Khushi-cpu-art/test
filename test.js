@@ -3,19 +3,21 @@ const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs').promises;
 const path = require('path');
 
-describe('test', function () {
+describe('Selenium Screenshot Test', function () {
   this.timeout(30000);
   let driver;
 
+  // Helper function to save screenshots
   async function saveScreenshot(driver, filename) {
     const image = await driver.takeScreenshot();
     await fs.writeFile(path.join(__dirname, filename), image, 'base64');
   }
 
-  beforeEach(async function () {
-    // Provide the chromedriver path using chrome.Options
-    const options = new chrome.Options();
+  before(async function () {
+    // Setup ChromeDriver using the local chromedriver.exe
     const service = new chrome.ServiceBuilder('./chromedriver.exe');
+    const options = new chrome.Options();
+
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(options)
@@ -23,21 +25,22 @@ describe('test', function () {
       .build();
   });
 
-  afterEach(async function () {
+  after(async function () {
     if (driver) {
       await driver.quit();
     }
   });
 
-  it('test', async function () {
-    await driver.get("https://theysaidso.com/");
+  it('Should load page and take screenshots', async function () {
+    // Navigate to the page
+    await driver.get('https://theysaidso.com/');
     await driver.manage().window().setRect({ width: 1054, height: 800 });
 
+    // Take screenshot before scroll
     await saveScreenshot(driver, 'screenshot_01.png');
 
-    await driver.executeScript("window.scrollTo(0,512)");
+    // Scroll down and take another screenshot
+    await driver.executeScript('window.scrollTo(0,512)');
     await saveScreenshot(driver, 'screenshot_02.png');
-
-    await driver.close();
   });
 });
