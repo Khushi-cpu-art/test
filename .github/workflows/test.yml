@@ -31,7 +31,7 @@ jobs:
           pkill -f chrome || true
 
       - name: Install dependencies
-        run: npm install
+        run: npm install rimraf
 
       - name: Run Selenium test
         run: npm test
