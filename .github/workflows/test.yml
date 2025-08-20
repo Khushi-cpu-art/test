@@ -56,7 +56,7 @@ jobs:
         body: |
           Hello,
           Your Selenium test has completed.
-          - HTML report and screenshots are attached.
+          The HTML report and screenshots are attached.
         attachments: |
           mochawesome-report/mochawesome.html
           screenshot_01.png
