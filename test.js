@@ -1,14 +1,25 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
 const assert = require('assert');
 
 describe('Selenium Screenshot Test', function() {
   let driver;
-
-  // Increase timeout for setup and test
   this.timeout(30000);
 
   before(async function() {
-    driver = await new Builder().forBrowser('chrome').build();
+    // Create a unique temp directory for user data dir
+    const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chrome-user-data-'));
+
+    let options = new chrome.Options();
+    options.addArguments(`--user-data-dir=${userDataDir}`);
+
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
   });
 
   after(async function() {
@@ -22,10 +33,8 @@ describe('Selenium Screenshot Test', function() {
     const title = await driver.getTitle();
     assert.ok(title.includes('Example'), 'Page title does not include "Example"');
 
-    // Take screenshot as base64 string
     const screenshotBase64 = await driver.takeScreenshot();
 
-    // Embed screenshot directly inside the Mochawesome HTML report
     this.test.context = {
       title: 'Screenshot',
       value: `<img src="data:image/png;base64,${screenshotBase64}" width="400"/>`
