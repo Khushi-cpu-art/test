@@ -2,9 +2,9 @@ name: Run Selenium Test with Email Report
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
@@ -28,6 +28,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Create mochawesome-report directory
+        run: mkdir -p mochawesome-report
 
       - name: Run Selenium test
         run: npm test
