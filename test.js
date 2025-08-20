@@ -1,65 +1,34 @@
-const { Builder } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+const { Builder, By, until } = require('selenium-webdriver');
 const assert = require('assert');
 
-describe('Selenium Screenshot Test', function () {
-  this.timeout(30000); // increase timeout because browser setup can be slow
-
+describe('Selenium Screenshot Test', function() {
   let driver;
 
-  before(async function () {
-    const userDataDir = path.join(os.tmpdir(), 'chrome-user-data-' + Date.now());
+  // Increase timeout for setup and test
+  this.timeout(30000);
 
-    const options = new chrome.Options();
-    options.addArguments(
-      '--headless',
-      '--disable-gpu',
-      '--no-sandbox',
-      `--user-data-dir=${userDataDir}`
-    );
-
-    driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(options)
-      .build();
-
-    await driver.get('https://example.com');
+  before(async function() {
+    driver = await new Builder().forBrowser('chrome').build();
   });
 
-  after(async function () {
+  after(async function() {
     if (driver) {
       await driver.quit();
     }
   });
 
-  it('Should load page and take screenshot', async function () {
-    const screenshotDir = path.resolve(__dirname, 'mochawesome-report');
-    const screenshotPath = path.join(screenshotDir, 'screenshot_01.png');
-
-    // Make sure directory exists
-    fs.mkdirSync(screenshotDir, { recursive: true });
-
-    const screenshot = await driver.takeScreenshot();
-    fs.writeFileSync(screenshotPath, screenshot, 'base64');
-
-    // Attach screenshot to Mochawesome context
-    if (this.test && this.test.context) {
-      this.test.context.attach = {
-        title: 'Screenshot',
-        value: 'screenshot_01.png',
-      };
-    } else if (this.test) {
-      this.test.context = {
-        title: 'Screenshot',
-        value: 'screenshot_01.png',
-      };
-    }
-
-    // Just a basic assertion that page title contains "Example"
+  it('Should load page and take screenshot', async function() {
+    await driver.get('https://example.com');
     const title = await driver.getTitle();
     assert.ok(title.includes('Example'), 'Page title does not include "Example"');
+
+    // Take screenshot as base64 string
+    const screenshotBase64 = await driver.takeScreenshot();
+
+    // Embed screenshot directly inside the Mochawesome HTML report
+    this.test.context = {
+      title: 'Screenshot',
+      value: `<img src="data:image/png;base64,${screenshotBase64}" width="400"/>`
+    };
   });
 });
