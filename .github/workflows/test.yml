@@ -5,56 +5,47 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
       with:
         node-version: '18'
 
     - name: Install dependencies
       run: npm install
 
-    - name: Run Selenium test
+    - name: Install Chrome
+      uses: browser-actions/setup-chrome@v1
+
+    - name: Run tests
       run: npm test
 
-    - name: Upload screenshots
+    - name: Upload mochawesome report
       if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: screenshots
-        path: screenshots/*.png
-
-    - name: Upload Mochawesome HTML Report
-      if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: mochawesome-report
-        path: mochawesome-report/mochawesome.html
+        path: mochawesome-report/
 
-    - name: Email report and screenshots
-      if: always()
+    - name: Send email notification (optional)
+      if: failure()
       uses: dawidd6/action-send-mail@v3
       with:
-        server_address: smtp.gmail.com
-        server_port: 587
+        server_address: smtp.example.com
+        server_port: 465
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: Selenium Test Results - ${{ github.repository }}
-        to: ${{ secrets.EMAIL_TO }}
-        from: ${{ secrets.EMAIL_USERNAME }}
+        subject: GitHub Actions Selenium Test Failed
+        to: your@email.com
+        from: GitHub Actions <your@email.com>
         body: |
-          Hello,
-          Your Selenium test has completed.
-          Please find the attached HTML report and screenshots.
-        attachments: |
-          mochawesome-report/mochawesome.html
-          screenshots/*.png
+          The Selenium test has failed. Please check the attached report.
+        attachments: mochawesome-report/mochawesome.html
