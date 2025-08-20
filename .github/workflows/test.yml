@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'    # Changed from 18 to 20
+          node-version: '20'    # Use Node.js 20 for compatibility with latest selenium-webdriver
 
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
