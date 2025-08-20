@@ -1,18 +1,18 @@
-
-name: Run Selenium IDE .side File with Email Report
+name: Run Selenium Test with Email Report
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  run-tests:
+  test:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Node.js
@@ -20,55 +20,29 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install Selenium-side-runner and ChromeDriver
-      run: |
-        npm install -g selenium-side-runner
-        npm install -g chromedriver
+    - name: Install dependencies
+      run: npm install
 
-    - name: Set Chrome path for Windows
-      run: echo "CHROME_BIN=C:\Program Files\Google\Chrome\Application\chrome.exe" >> $env:GITHUB_ENV
-      shell: pwsh
+    - name: Run Selenium test
+      run: npm test
 
-    - name: Run Selenium IDE Test and Save Logs (with timestamps & status)
-      shell: pwsh
-      run: |
-        mkdir test-reports
-        $logFile = "test-reports/test-log.txt"
-        $startTime = Get-Date
-        "Test started at: $startTime" | Out-File $logFile
-
-        selenium-side-runner --timeout 180000 --capabilities "goog:chromeOptions.args=[headless,no-sandbox,disable-gpu,window-size=1920,1080]" sovrn.side 2>&1 | ForEach-Object {
-          "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $_"
-        } | Tee-Object -FilePath $logFile -Append
-
-        $endTime = Get-Date
-        $duration = $endTime - $startTime
-        "Test ended at: $endTime" | Out-File $logFile -Append
-        "Test duration: $($duration.TotalSeconds) seconds" | Out-File $logFile -Append
-
-        if ($LASTEXITCODE -eq 0) {
-          "TEST RESULT: PASS" | Out-File $logFile -Append
-        } else {
-          "TEST RESULT: FAIL" | Out-File $logFile -Append
-        }
-
-        exit $LASTEXITCODE
-
-    - name: Upload Test Report as Artifact
+    - name: Upload screenshots
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: selenium-test-log
-        path: test-reports/test-log.txt
+        name: screenshots
+        path: |
+          screenshot_01.png
+          screenshot_02.png
 
-    - name: Add Test Log to Summary
+    - name: Upload Mochawesome HTML Report
       if: always()
-      shell: pwsh
-      run: |
-        echo "### Selenium Test Log" >> $env:GITHUB_STEP_SUMMARY
-        Get-Content test-reports/test-log.txt -Raw | Out-String | Add-Content $env:GITHUB_STEP_SUMMARY
+      uses: actions/upload-artifact@v4
+      with:
+        name: mochawesome-report
+        path: mochawesome-report/mochawesome.html
 
-    - name: Email test report
+    - name: Email report and screenshots
       if: always()
       uses: dawidd6/action-send-mail@v3
       with:
@@ -76,13 +50,14 @@ jobs:
         server_port: 587
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: Selenium Test Report - ${{ github.repository }}
+        subject: Selenium Test Results - ${{ github.repository }}
         to: ${{ secrets.EMAIL_TO }}
         from: ${{ secrets.EMAIL_USERNAME }}
         body: |
           Hello,
-          The Selenium test run has completed.
-          Please find the test log attached.
-          Regards,
-          GitHub Actions
-        attachments: test-reports/test-log.txt
+          Your Selenium test has completed.
+          - HTML report and screenshots are attached.
+        attachments: |
+          mochawesome-report/mochawesome.html
+          screenshot_01.png
+          screenshot_02.png
