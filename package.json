@@ -1,14 +1,11 @@
 {
-  "name": "selenium-test",
-  "version": "1.0.0",
-  "description": "Selenium test with mochawesome report",
-  "main": "test.js",
   "scripts": {
-    "test": "mocha test.js --reporter mochawesome"
+    "test": "mocha test.js --reporter mochawesome --reporter-options inlineAssets=true"
   },
   "devDependencies": {
-    "chromedriver": "^139.0.0",
+    "mocha": "^11.7.1",
     "mochawesome": "^7.1.3",
-    "selenium-webdriver": "^4.19.0"
+    "selenium-webdriver": "^4.x",
+    "chromedriver": "^139.0.0"
   }
 }
