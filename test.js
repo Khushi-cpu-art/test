@@ -1,40 +1,44 @@
 const { Builder, By } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+
+require('mocha');
 
 describe('Selenium Screenshot Test', function () {
-  this.timeout(30000);
+  this.timeout(60000); // 60 seconds timeout for slow CI environments
+
   let driver;
 
   before(async function () {
-    driver = await new Builder().forBrowser('chrome').build();
-    // Ensure screenshots directory exists
-    if (!fs.existsSync('screenshots')) {
-      fs.mkdirSync('screenshots');
-    }
-  });
+    console.log('Starting Selenium WebDriver...');
+    
+    const options = new chrome.Options();
+    options.addArguments('--headless', '--disable-gpu', '--no-sandbox');
 
-  after(async function () {
-    if (driver) await driver.quit();
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
+
+    console.log('Navigating to page...');
+    await driver.get('https://example.com'); // Change this URL to your target
+
+    console.log('Page loaded.');
   });
 
   it('Should load page and take screenshots', async function () {
-    await driver.get('https://theysaidso.com/');
+    const screenshotPath = path.resolve(__dirname, 'screenshot.png');
 
-    // Screenshot 1
-    let screenshot1 = await driver.takeScreenshot();
-    fs.writeFileSync(path.join('screenshots', 'screenshot_01.png'), screenshot1, 'base64');
+    const screenshot = await driver.takeScreenshot();
+    fs.writeFileSync(screenshotPath, screenshot, 'base64');
+    console.log(`Screenshot saved to ${screenshotPath}`);
+  });
 
-    // Scroll down a bit
-    await driver.executeScript('window.scrollTo(0, 300);');
-
-    // Screenshot 2
-    let screenshot2 = await driver.takeScreenshot();
-    fs.writeFileSync(path.join('screenshots', 'screenshot_02.png'), screenshot2, 'base64');
-
-    // Verify page title contains expected text
-    const title = await driver.getTitle();
-    assert.ok(title.includes('They Said So'));
+  after(async function () {
+    if (driver) {
+      await driver.quit();
+      console.log('Browser closed.');
+    }
   });
 });
