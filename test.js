@@ -22,25 +22,19 @@ describe('Selenium Screenshot Test', function () {
 
   it('Should load page and take screenshot', async function () {
     const screenshotDir = path.resolve(__dirname, 'mochawesome-report');
-    const screenshotPath = path.join(screenshotDir, 'screenshot_01.png');
+    const screenshotFile = 'screenshot_01.png';
+    const screenshotPath = path.join(screenshotDir, screenshotFile);
 
     fs.mkdirSync(screenshotDir, { recursive: true });
 
     const screenshot = await driver.takeScreenshot();
     fs.writeFileSync(screenshotPath, screenshot, 'base64');
 
-    // 👉 Attach screenshot to Mochawesome context
-    if (this.test && this.test.context) {
-      this.test.context.attach = {
-        title: 'Screenshot',
-        value: 'screenshot_01.png'
-      };
-    } else if (this.test) {
-      this.test.context = {
-        title: 'Screenshot',
-        value: 'screenshot_01.png'
-      };
-    }
+    // ✅ Embed screenshot in the HTML report using <img>
+    this.test.context = {
+      title: 'Screenshot',
+      value: `<img src="${screenshotFile}" width="400"/>`
+    };
   });
 
   after(async function () {
