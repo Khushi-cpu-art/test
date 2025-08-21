@@ -5,13 +5,36 @@ const path = require('path');
 require('chromedriver');
 
 async function safeClick(driver, element) {
-  await driver.executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element);
-  await driver.sleep(500); // Allow scroll animation to complete
-  await element.click();
+  const rect = await driver.executeScript(
+    `const rect = arguments[0].getBoundingClientRect();
+     return { x: rect.left + window.scrollX, y: rect.top + window.scrollY };`, element);
+
+  await driver.executeScript(`window.scrollTo(${rect.x}, ${rect.y - 100});`);
+
+  await driver.sleep(500);
+
+  await driver.wait(until.elementIsVisible(element), 5000);
+  await driver.wait(until.elementIsEnabled(element), 5000);
+
+  try {
+    await element.click();
+  } catch (e) {
+    console.log('Click intercepted, trying JavaScript click');
+    await driver.executeScript("arguments[0].click();", element);
+  }
 }
 
-describe('Converted Selenium Test from IDE', function () {
-  this.timeout(60000);
+async function takeStepScreenshot(driver, stepName) {
+  const screenshot = await driver.takeScreenshot();
+  const screenshotDir = path.resolve(__dirname, 'mochawesome-report');
+  fs.mkdirSync(screenshotDir, { recursive: true });
+  const screenshotPath = path.resolve(screenshotDir, `${stepName}.png`);
+  fs.writeFileSync(screenshotPath, screenshot, 'base64');
+  console.log(`Screenshot saved: ${screenshotPath}`);
+}
+
+describe('Converted Selenium Test from IDE with Multiple Screenshots', function () {
+  this.timeout(90000);
   let driver;
 
   before(async function () {
@@ -31,57 +54,60 @@ describe('Converted Selenium Test from IDE', function () {
       const acceptBtn = await driver.findElement(By.css('button#cookieConsentAccept'));
       await acceptBtn.click();
       await driver.sleep(1000);
+      await takeStepScreenshot(driver, 'cookie_accepted');
     } catch (e) {
       console.log('Cookie popup not found or already accepted.');
     }
+
+    await takeStepScreenshot(driver, 'homepage_loaded');
   });
 
-  it('Should navigate and interact with the site', async function () {
+  it('Should navigate and interact with the site, taking screenshots at every step', async function () {
     try {
       await driver.manage().window().setRect({ width: 1074, height: 800 });
+      await takeStepScreenshot(driver, 'window_resized');
 
       // Click "QShows»"
       const qshowsLink = await driver.findElement(By.partialLinkText("QShows"));
       await safeClick(driver, qshowsLink);
       await driver.sleep(2000);
+      await takeStepScreenshot(driver, 'clicked_qshows');
 
       // Click "Home"
       const homeLink = await driver.findElement(By.linkText("Home"));
       await safeClick(driver, homeLink);
       await driver.sleep(2000);
+      await takeStepScreenshot(driver, 'clicked_home');
 
-      // Scroll through the page (optional smooth scrolling)
+      // Scroll through the page
       const scrollPoints = [290, 1160, 1699, 2854, 3139];
-      for (const y of scrollPoints) {
+      for (let i = 0; i < scrollPoints.length; i++) {
+        const y = scrollPoints[i];
         await driver.executeScript(`window.scrollTo(0, ${y})`);
         await driver.sleep(500);
+        await takeStepScreenshot(driver, `scrolled_to_${y}`);
       }
 
       // Click "API Details »"
       const apiLink = await driver.findElement(By.partialLinkText("API Details"));
       await safeClick(driver, apiLink);
       await driver.sleep(2000);
+      await takeStepScreenshot(driver, 'clicked_api_details');
 
-      // Scroll again to element (if needed)
+      // Scroll a bit more
       await driver.executeScript("window.scrollTo(0, 490)");
       await driver.sleep(1000);
+      await takeStepScreenshot(driver, 'scrolled_to_490');
 
       // Click "https://quotes.rest" link
       const quotesRestLink = await driver.findElement(By.partialLinkText("https://quotes.rest"));
       await safeClick(driver, quotesRestLink);
       await driver.sleep(2000);
+      await takeStepScreenshot(driver, 'clicked_quotes_rest');
 
-      // Take screenshot
-      const screenshot = await driver.takeScreenshot();
-      const screenshotPath = path.resolve(__dirname, 'mochawesome-report', 'screenshot.png');
-      fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
-      fs.writeFileSync(screenshotPath, screenshot, 'base64');
-      console.log(`Screenshot saved to ${screenshotPath}`);
-
-      this.test.context = `data:image/png;base64,${screenshot}`;
     } catch (err) {
       console.error('Test failed:', err);
-      throw err; // Fail the test on error
+      throw err;
     }
   });
 
