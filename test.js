@@ -3,6 +3,7 @@ const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const addContext = require('mochawesome/addContext');
 
 const screenshotDir = path.join(__dirname, 'mochawesome-report');
 if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
@@ -36,5 +37,6 @@ describe('Selenium Test with Dynamic Profile', function () {
   it('should load the site and take screenshots', async function () {
     await driver.get('https://theysaidso.com/');
     await saveScreenshot(driver, 'homepage');
+    addContext(this, path.join('mochawesome-report', 'homepage.png'));
   });
 });
