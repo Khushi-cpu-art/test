@@ -4,6 +4,12 @@ const fs = require('fs');
 const path = require('path');
 require('chromedriver');
 
+async function safeClick(driver, element) {
+  await driver.executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element);
+  await driver.sleep(500); // Allow scroll animation to complete
+  await element.click();
+}
+
 describe('Converted Selenium Test from IDE', function () {
   this.timeout(60000);
   let driver;
@@ -35,14 +41,16 @@ describe('Converted Selenium Test from IDE', function () {
       await driver.manage().window().setRect({ width: 1074, height: 800 });
 
       // Click "QShows»"
-      await driver.findElement(By.partialLinkText("QShows")).click();
+      const qshowsLink = await driver.findElement(By.partialLinkText("QShows"));
+      await safeClick(driver, qshowsLink);
       await driver.sleep(2000);
 
       // Click "Home"
-      await driver.findElement(By.linkText("Home")).click();
+      const homeLink = await driver.findElement(By.linkText("Home"));
+      await safeClick(driver, homeLink);
       await driver.sleep(2000);
 
-      // Scroll through the page
+      // Scroll through the page (optional smooth scrolling)
       const scrollPoints = [290, 1160, 1699, 2854, 3139];
       for (const y of scrollPoints) {
         await driver.executeScript(`window.scrollTo(0, ${y})`);
@@ -50,18 +58,20 @@ describe('Converted Selenium Test from IDE', function () {
       }
 
       // Click "API Details »"
-      await driver.findElement(By.partialLinkText("API Details")).click();
+      const apiLink = await driver.findElement(By.partialLinkText("API Details"));
+      await safeClick(driver, apiLink);
       await driver.sleep(2000);
 
-      // Scroll again
+      // Scroll again to element (if needed)
       await driver.executeScript("window.scrollTo(0, 490)");
       await driver.sleep(1000);
 
       // Click "https://quotes.rest" link
-      await driver.findElement(By.partialLinkText("https://quotes.rest")).click();
+      const quotesRestLink = await driver.findElement(By.partialLinkText("https://quotes.rest"));
+      await safeClick(driver, quotesRestLink);
       await driver.sleep(2000);
 
-      // Screenshot
+      // Take screenshot
       const screenshot = await driver.takeScreenshot();
       const screenshotPath = path.resolve(__dirname, 'mochawesome-report', 'screenshot.png');
       fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
@@ -71,7 +81,7 @@ describe('Converted Selenium Test from IDE', function () {
       this.test.context = `data:image/png;base64,${screenshot}`;
     } catch (err) {
       console.error('Test failed:', err);
-      throw err; // Make the test fail
+      throw err; // Fail the test on error
     }
   });
 
