@@ -1,52 +1,48 @@
 const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
+const addContext = require('mochawesome/addContext');
 const fs = require('fs');
 const path = require('path');
-const addContext = require('mochawesome/addContext');
 
-const screenshotDir = path.join(__dirname, 'mochawesome-report');
+const screenshotDir = path.join(__dirname, 'mochawesome-report', 'screenshots');
 if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
 
-async function saveScreenshot(driver, testContext, stepName) {
+async function saveScreenshot(driver, test, stepName) {
   const img = await driver.takeScreenshot();
-  const filePath = path.join(screenshotDir, `${stepName}.png`);
+  const fileName = `${stepName}.png`;
+  const filePath = path.join(screenshotDir, fileName);
   fs.writeFileSync(filePath, img, 'base64');
+  addContext(test, {
+    title: `Screenshot: ${stepName}`,
+    value: `./screenshots/${fileName}`
+  });
   console.log(`Screenshot saved: ${filePath}`);
-  // Add screenshot to mochawesome report context
-  addContext(testContext, filePath);
 }
 
-async function scrollToElement(driver, element) {
-  await driver.executeScript("arguments[0].scrollIntoView({behavior:'smooth', block:'center'})", element);
-  await driver.sleep(700); // wait for scrolling and UI to settle
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Helper to click element safely
 async function clickElement(driver, element) {
   await driver.wait(until.elementIsVisible(element), 10000);
   await driver.wait(until.elementIsEnabled(element), 10000);
-  await scrollToElement(driver, element);
   await element.click();
-  await driver.sleep(500); // wait for click effect
 }
 
-describe('Selenium Steps with Screenshots', function () {
+describe('Selenium Steps with Screenshots', function() {
   this.timeout(60000);
+
   let driver;
 
-  before(async function () {
-    const options = new chrome.Options()
-      .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage');
-    driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(options)
-      .build();
+  before(async () => {
+    driver = await new Builder().forBrowser('chrome').build();
   });
 
-  after(async function () {
+  after(async () => {
     if (driver) await driver.quit();
   });
 
-  it('should perform steps and take screenshots after each', async function () {
+  it('should perform steps and take screenshots after each', async function() {
     // Step 1: Load homepage
     await driver.get('https://theysaidso.com/');
     await saveScreenshot(driver, this, 'step_1_homepage');
@@ -56,39 +52,48 @@ describe('Selenium Steps with Screenshots', function () {
     await saveScreenshot(driver, this, 'step_2_window_resized');
 
     // Step 3: Click "QShows»"
+    await driver.wait(until.elementLocated(By.linkText("QShows»")), 10000);
     const qshowsLink = await driver.findElement(By.linkText("QShows»"));
     await clickElement(driver, qshowsLink);
     await saveScreenshot(driver, this, 'step_3_clicked_QShows');
 
     // Step 4: Click "Home"
+    await driver.wait(until.elementLocated(By.linkText("Home")), 10000);
     const homeLink = await driver.findElement(By.linkText("Home"));
     await clickElement(driver, homeLink);
     await saveScreenshot(driver, this, 'step_4_clicked_Home');
 
-    // Step 5: Scroll through the page with small pauses
-    const scrollPositions = [290, 1160, 1699, 2854, 3139];
+    // Step 5: Scroll multiple times with pauses and screenshots
+    const scrollPositions = [
+      290.4,
+      1160.8,
+      1699.2,
+      2854.4,
+      3139.2
+    ];
+
     for (let i = 0; i < scrollPositions.length; i++) {
       await driver.executeScript(`window.scrollTo(0, ${scrollPositions[i]})`);
-      await driver.sleep(700);
+      await sleep(500);  // wait for page to stabilize
       await saveScreenshot(driver, this, `step_5_scroll_${i + 1}`);
     }
 
-    // Step 6: Click "API Details »"
-    const apiDetailsLink = await driver.findElement(By.linkText("API Details »"));
+    // Step 6: Click "API Details »" using partial link text and wait
+    await driver.wait(until.elementLocated(By.partialLinkText("API Details")), 10000);
+    const apiDetailsLink = await driver.findElement(By.partialLinkText("API Details"));
     await clickElement(driver, apiDetailsLink);
     await saveScreenshot(driver, this, 'step_6_clicked_API_Details');
 
-    // Step 7: Scroll a bit
-    await driver.executeScript("window.scrollTo(0, 490)");
-    await driver.sleep(700);
-    await saveScreenshot(driver, this, 'step_7_scrolled_490');
+    // Step 7: Scroll a bit and click "https://quotes.rest"
+    await driver.executeScript("window.scrollTo(0, 490.4)");
+    await sleep(500);
+    await saveScreenshot(driver, this, 'step_7_scrolled_before_quotes_rest');
 
-    // Step 8: Click "https://quotes.rest"
+    await driver.wait(until.elementLocated(By.linkText("https://quotes.rest")), 10000);
     const quotesRestLink = await driver.findElement(By.linkText("https://quotes.rest"));
     await clickElement(driver, quotesRestLink);
     await saveScreenshot(driver, this, 'step_8_clicked_quotes_rest');
 
-    // Close driver at end (optional, mocha after hook will quit as well)
-    // await driver.close();
+    // Done
   });
 });
