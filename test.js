@@ -2,25 +2,40 @@ const {Builder, By, until} = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const SCREENSHOT_DIR = path.join(__dirname, 'mochawesome-report');
-if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR);
-
-async function takeScreenshot(driver, name) {
-  let image = await driver.takeScreenshot();
-  let filePath = path.join(SCREENSHOT_DIR, `${name}.png`);
-  fs.writeFileSync(filePath, image, 'base64');
-  console.log(`Screenshot saved: ${filePath}`);
+const screenshotsDir = path.resolve(__dirname, 'mochawesome-report');
+if (!fs.existsSync(screenshotsDir)) {
+  fs.mkdirSync(screenshotsDir, { recursive: true });
 }
 
-async function safeClick(driver, element) {
+const saveScreenshot = async (driver, name) => {
+  let image = await driver.takeScreenshot();
+  let filePath = path.join(screenshotsDir, `${name}.png`);
+  fs.writeFileSync(filePath, image, 'base64');
+  console.log(`Screenshot saved: ${filePath}`);
+};
+
+async function safeClick(driver, locator, screenshotName = null) {
   try {
-    await driver.executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element);
-    await driver.wait(until.elementIsVisible(element), 5000);
-    await driver.wait(until.elementIsEnabled(element), 5000);
-    await element.click();
+    let el = await driver.findElement(locator);
+    await driver.wait(until.elementIsVisible(el), 5000);
+    await driver.wait(until.elementIsEnabled(el), 5000);
+    await driver.wait(until.elementIsClickable(el), 5000);
+    await el.click();
+    if (screenshotName) await saveScreenshot(driver, screenshotName);
   } catch (err) {
-    console.error('Error clicking element:', err.message);
+    // If click intercepted, try scrolling and retry once
+    if (err.name === 'ElementClickInterceptedError') {
+      let el = await driver.findElement(locator);
+      await driver.executeScript("arguments[0].scrollIntoView(true);", el);
+      await driver.sleep(500);
+      await el.click();
+      if (screenshotName) await saveScreenshot(driver, screenshotName);
+    } else {
+      console.error('Error clicking element:', err);
+      throw err;
+    }
   }
 }
 
@@ -29,8 +44,9 @@ describe('Converted Selenium Test from IDE with Multiple Screenshots', function 
   let driver;
 
   before(async () => {
-    // Setup Chrome options - NO --user-data-dir to avoid session conflict
-    let options = new chrome.Options();
+    const tempDir = path.join(os.tmpdir(), `chrome_profile_${Date.now()}`);
+    let options = new chrome.Options()
+      .addArguments(`--user-data-dir=${tempDir}`);
 
     driver = await new Builder()
       .forBrowser('chrome')
@@ -44,44 +60,37 @@ describe('Converted Selenium Test from IDE with Multiple Screenshots', function 
 
   it('Should navigate and interact with the site, taking screenshots at every step', async () => {
     await driver.get('https://theysaidso.com/');
-    await takeScreenshot(driver, 'homepage_loaded');
+    await saveScreenshot(driver, 'homepage_loaded');
 
-    // Example interaction: accept cookie popup if it exists
+    // Accept cookie popup if present
     try {
-      let cookieButton = await driver.findElement(By.id('cookie_action_close_header'));
-      await safeClick(driver, cookieButton);
-      await takeScreenshot(driver, 'cookie_handled');
+      let cookieAcceptBtn = await driver.findElement(By.id('cookie_action_close_header'));
+      await cookieAcceptBtn.click();
+      await saveScreenshot(driver, 'cookie_handled');
     } catch {
       console.log('Cookie popup not found or already accepted.');
     }
 
-    await driver.manage().window().setRect({width: 1280, height: 800});
-    await takeScreenshot(driver, 'window_resized');
+    await driver.manage().window().setRect({width: 1280, height: 1024});
+    await saveScreenshot(driver, 'window_resized');
 
-    // Example: click on "Q" shows link
-    let qShowsLink = await driver.findElement(By.partialLinkText('Q'));
-    await safeClick(driver, qShowsLink);
-    await takeScreenshot(driver, 'clicked_qshows');
+    // Example of clicking "Q & A" (adjust selector if needed)
+    await safeClick(driver, By.linkText('Q & A'), 'clicked_qanda');
 
-    // Navigate back
-    await driver.navigate().back();
-    await takeScreenshot(driver, 'clicked_home');
+    // Navigate back to home (adjust selector if needed)
+    await safeClick(driver, By.linkText('Home'), 'clicked_home');
 
-    // Scroll to various positions and take screenshots
-    let scrollPositions = [290, 1160, 1699, 2854, 3139];
+    // Scroll down in steps and take screenshots
+    const scrollPositions = [290, 1160, 1699, 2854, 3139];
     for (let pos of scrollPositions) {
       await driver.executeScript(`window.scrollTo(0, ${pos});`);
-      await driver.sleep(500);
-      await takeScreenshot(driver, `scrolled_to_${pos}`);
+      await driver.sleep(1000);
+      await saveScreenshot(driver, `scrolled_to_${pos}`);
     }
 
-    // Try clicking the API Details link with exact text
-    try {
-      let apiDetailsLink = await driver.findElement(By.linkText('API Details »'));
-      await safeClick(driver, apiDetailsLink);
-      await takeScreenshot(driver, 'clicked_api_details');
-    } catch (e) {
-      console.error('API Details link not found:', e.message);
-    }
+    // Click on "API Details »" link (note the space and special char)
+    await safeClick(driver, By.partialLinkText('API Details »'), 'clicked_api_details');
+
+    // Add more interactions and screenshots as needed...
   });
 });
