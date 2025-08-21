@@ -1,30 +1,19 @@
 const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
 const addContext = require('mochawesome/addContext');
 
-const screenshotDir = path.join(__dirname, 'mochawesome-report');
-if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
-
-async function saveScreenshot(driver, name) {
-  const img = await driver.takeScreenshot();
-  const p = path.join(screenshotDir, `${name}.png`);
-  fs.writeFileSync(p, img, 'base64');
-  console.log(`Screenshot saved: ${p}`);
-  return p;  // Return full path for further use
-}
-
-describe('Selenium Test with Dynamic Profile', function () {
+describe('Selenium Test with Embedded Screenshots', function () {
   this.timeout(60000);
   let driver;
 
+  async function saveScreenshot(driver) {
+    const img = await driver.takeScreenshot();
+    return `data:image/png;base64,${img}`;
+  }
+
   before(async function () {
-    const tempDir = path.join(os.tmpdir(), `chrome_profile_${Date.now()}`);
     let options = new chrome.Options()
-      .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage')
-      .addArguments(`--user-data-dir=${tempDir}`);
+      .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage');
 
     driver = await new Builder()
       .forBrowser('chrome')
@@ -39,17 +28,26 @@ describe('Selenium Test with Dynamic Profile', function () {
   it('should load the site and take screenshots for every step', async function () {
     await driver.get('https://theysaidso.com/');
 
-    // Step 1 - homepage
-    let screenshotPath = await saveScreenshot(driver, 'homepage');
-    addContext(this, path.relative(screenshotDir, screenshotPath));
+    // Step 1: homepage screenshot
+    let imgBase64 = await saveScreenshot(driver);
+    addContext(this, {
+      title: 'Homepage Screenshot',
+      value: imgBase64
+    });
 
-    // Example additional step - wait 2 seconds
+    // Example: wait 2 seconds and screenshot again
     await driver.sleep(2000);
-    screenshotPath = await saveScreenshot(driver, 'after-wait');
-    addContext(this, path.relative(screenshotDir, screenshotPath));
+    imgBase64 = await saveScreenshot(driver);
+    addContext(this, {
+      title: 'After Wait Screenshot',
+      value: imgBase64
+    });
 
-    // Example final step
-    screenshotPath = await saveScreenshot(driver, 'final-step');
-    addContext(this, path.relative(screenshotDir, screenshotPath));
+    // Final step screenshot
+    imgBase64 = await saveScreenshot(driver);
+    addContext(this, {
+      title: 'Final Step Screenshot',
+      value: imgBase64
+    });
   });
 });
