@@ -1,13 +1,8 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const chromedriver = require('chromedriver');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-
-// Set ChromeDriver service explicitly
-const service = new chrome.ServiceBuilder(chromedriver.path).build();
-chrome.setDefaultService(service);
 
 const screenshotDir = path.join(__dirname, 'mochawesome-report');
 if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
@@ -28,7 +23,10 @@ describe('Selenium Test with Dynamic Profile', function () {
       .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage')
       .addArguments(`--user-data-dir=${tempDir}`);
 
-    driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
   });
 
   after(async function () {
@@ -38,6 +36,5 @@ describe('Selenium Test with Dynamic Profile', function () {
   it('should load the site and take screenshots', async function () {
     await driver.get('https://theysaidso.com/');
     await saveScreenshot(driver, 'homepage');
-    // Add more test steps and screenshots if needed
   });
 });
