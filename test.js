@@ -1,85 +1,78 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { Builder, By } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const addContext = require('mochawesome-add-context');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
-describe('Selenium Test with Embedded Screenshots', function () {
+const screenshotDir = path.join(__dirname, 'mochawesome-report');
+if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
+
+async function saveScreenshot(driver, name) {
+  const img = await driver.takeScreenshot();
+  const filePath = path.join(screenshotDir, `${name}.png`);
+  fs.writeFileSync(filePath, img, 'base64');
+  console.log(`Screenshot saved: ${filePath}`);
+  return `${name}.png`; // return filename for embedding
+}
+
+describe('Selenium Steps with Screenshots', function () {
   this.timeout(60000);
   let driver;
 
-  // Helper to save screenshot and embed it in mochawesome
-  async function saveScreenshot(testContext, driver, stepName) {
-    const img = await driver.takeScreenshot();
-    const imgBase64 = `data:image/png;base64,${img}`;
-    addContext(testContext, {
-      title: stepName,
-      value: imgBase64,
-    });
-  }
+  before(async function () {
+    const tempDir = path.join(os.tmpdir(), `chrome_profile_${Date.now()}`);
+    let options = new chrome.Options()
+      .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage')
+      .addArguments(`--user-data-dir=${tempDir}`);
 
-  before(async () => {
-    const options = new chrome.Options()
-      .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage');
-    driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
   });
 
-  after(async () => {
+  after(async function () {
     if (driver) await driver.quit();
   });
 
-  it('should navigate and take screenshots after each step', async function () {
+  it('should perform steps and take screenshots after each', async function () {
+    // Step 1: Open the page
     await driver.get('https://theysaidso.com/');
-    await saveScreenshot(this, driver, 'Loaded homepage');
+    let screenshot = await saveScreenshot(driver, 'step_1_page_loaded');
+    this.test.context(`![Step 1 - Page Loaded](./mochawesome-report/${screenshot})`);
 
-    await driver.manage().window().setRect({ width: 1074, height: 800 });
-    await saveScreenshot(this, driver, 'Resized window');
+    // Step 2: Click QShows link
+    await driver.findElement(By.linkText("QShows»")).click();
+    screenshot = await saveScreenshot(driver, 'step_2_qshows_clicked');
+    this.test.context(`![Step 2 - QShows Clicked](./mochawesome-report/${screenshot})`);
 
-    // Click on "QShows»" link
-    const qshowsLink = await driver.wait(until.elementLocated(By.linkText('QShows»')), 10000);
-    await qshowsLink.click();
+    // Step 3: Wait a bit for page load and click Home
+    await driver.sleep(2000);
+    await driver.findElement(By.linkText("Home")).click();
+    screenshot = await saveScreenshot(driver, 'step_3_home_clicked');
+    this.test.context(`![Step 3 - Home Clicked](./mochawesome-report/${screenshot})`);
+
+    // Step 4: Scroll to a few positions and take screenshot after last scroll
+    await driver.executeScript("window.scrollTo(0, 300)");
     await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Clicked QShows link');
-
-    // Click on "Home" link
-    const homeLink = await driver.wait(until.elementLocated(By.linkText('Home')), 10000);
-    await homeLink.click();
+    await driver.executeScript("window.scrollTo(0, 1160)");
     await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Clicked Home link');
-
-    // Scroll multiple times with sleeps
-    await driver.executeScript('window.scrollTo(0, 290.4)');
+    await driver.executeScript("window.scrollTo(0, 1700)");
     await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Scrolled to 290.4px');
+    screenshot = await saveScreenshot(driver, 'step_4_scrolled');
+    this.test.context(`![Step 4 - Scrolled](./mochawesome-report/${screenshot})`);
 
-    await driver.executeScript('window.scrollTo(0, 1160.8)');
-    await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Scrolled to 1160.8px');
+    // Step 5: Click API Details
+    await driver.findElement(By.linkText("API Details »")).click();
+    await driver.sleep(2000);
+    screenshot = await saveScreenshot(driver, 'step_5_api_details_clicked');
+    this.test.context(`![Step 5 - API Details Clicked](./mochawesome-report/${screenshot})`);
 
-    await driver.executeScript('window.scrollTo(0, 1699.2)');
+    // Step 6: Click the link "https://quotes.rest"
+    await driver.executeScript("window.scrollTo(0, 490)");
     await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Scrolled to 1699.2px');
-
-    await driver.executeScript('window.scrollTo(0, 2854.4)');
-    await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Scrolled to 2854.4px');
-
-    await driver.executeScript('window.scrollTo(0, 3139.2)');
-    await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Scrolled to 3139.2px');
-
-    // Click on "API Details »" link
-    const apiDetailsLink = await driver.wait(until.elementLocated(By.linkText('API Details »')), 10000);
-    await apiDetailsLink.click();
-    await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Clicked API Details link');
-
-    // Scroll and click external link
-    await driver.executeScript('window.scrollTo(0, 490.4)');
-    await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Scrolled to 490.4px');
-
-    const externalLink = await driver.wait(until.elementLocated(By.linkText('https://quotes.rest')), 10000);
-    await externalLink.click();
-    await driver.sleep(500);
-    await saveScreenshot(this, driver, 'Clicked external https://quotes.rest link');
+    await driver.findElement(By.linkText("https://quotes.rest")).click();
+    screenshot = await saveScreenshot(driver, 'step_6_quotes_rest_clicked');
+    this.test.context(`![Step 6 - Quotes Rest Clicked](./mochawesome-report/${screenshot})`);
   });
 });
