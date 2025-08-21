@@ -1,4 +1,4 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const os = require('os');
@@ -13,7 +13,7 @@ async function saveScreenshot(driver, name) {
   const p = path.join(screenshotDir, `${name}.png`);
   fs.writeFileSync(p, img, 'base64');
   console.log(`Screenshot saved: ${p}`);
-  return p;  // return the path for convenience
+  return p;  // Return full path for further use
 }
 
 describe('Selenium Test with Dynamic Profile', function () {
@@ -38,23 +38,18 @@ describe('Selenium Test with Dynamic Profile', function () {
 
   it('should load the site and take screenshots for every step', async function () {
     await driver.get('https://theysaidso.com/');
+
+    // Step 1 - homepage
     let screenshotPath = await saveScreenshot(driver, 'homepage');
-    addContext(this, path.resolve(screenshotPath));
+    addContext(this, path.relative(screenshotDir, screenshotPath));
 
-    // Example additional step: click a button (modify selector as needed)
-    // await driver.findElement(By.css('button.some-class')).click();
-
-    // Wait for an element or just wait some time for demo
+    // Example additional step - wait 2 seconds
     await driver.sleep(2000);
-
     screenshotPath = await saveScreenshot(driver, 'after-wait');
-    addContext(this, path.resolve(screenshotPath));
+    addContext(this, path.relative(screenshotDir, screenshotPath));
 
-    // Another step example (modify to your actual test steps)
-    // await driver.findElement(By.linkText('Some Link')).click();
-    // await driver.sleep(1000);
-
+    // Example final step
     screenshotPath = await saveScreenshot(driver, 'final-step');
-    addContext(this, path.resolve(screenshotPath));
+    addContext(this, path.relative(screenshotDir, screenshotPath));
   });
 });
