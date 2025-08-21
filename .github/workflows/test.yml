@@ -26,22 +26,24 @@ jobs:
       - name: Show Chrome version
         run: google-chrome --version
 
-      - name: Kill Chrome processes (cleanup)
+      - name: Clean up old Chrome sessions
         run: |
           pkill -f chrome || true
+          pkill -f chromedriver || true
+          rm -rf /tmp/chrome* || true
 
       - name: Install dependencies
-        run: npm install rimraf
+        run: npm install
 
       - name: Run Selenium test
         run: npm test
 
-      - name: Upload screenshots
+      - name: Upload all screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: mochawesome-report/screenshot_01.png
+          path: mochawesome-report/screenshots/*.png
 
       - name: Upload Mochawesome HTML Report
         if: always()
@@ -63,13 +65,10 @@ jobs:
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
             Hello,
-
             Your Selenium test has completed.
-
             The HTML report and screenshots are attached.
-
             Regards,
             GitHub Actions
           attachments: |
             mochawesome-report/mochawesome.html
-            mochawesome-report/screenshot_01.png
+            mochawesome-report/screenshots/*.png
