@@ -35,7 +35,7 @@ describe('Sample Selenium Test', function() {
 
   it('should open a page and check title', async function() {
     const driver = global.driver;
-    await driver.get('https://example.com'); // Replace with your URL
+    await driver.get('http://theysaidso.com/'); // Replace with your URL
 
     // Wait until the title contains "Example"
     await driver.wait(until.titleContains('Example'), 10000);
