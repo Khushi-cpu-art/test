@@ -1,8 +1,9 @@
-const { Builder, By, Key, until } = require('selenium-webdriver');
+const { Builder, By } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const addContext = require('mochawesome/addContext');
-const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const fs = require('fs');
+const addContext = require('mochawesome/addContext');
 
 const screenshotDir = path.join(__dirname, 'mochawesome-report');
 if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
@@ -20,7 +21,20 @@ describe('Selenium Steps with Screenshots', function () {
   let driver;
 
   beforeEach(async function () {
-    driver = await new Builder().forBrowser('chrome').build();
+    // Create unique Chrome user-data-dir to avoid conflicts
+    const userDataDir = path.join(os.tmpdir(), `chrome-profile-${Date.now()}`);
+    if (!fs.existsSync(userDataDir)) {
+      fs.mkdirSync(userDataDir, { recursive: true });
+    }
+
+    let options = new chrome.Options()
+      .addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage')
+      .addArguments(`--user-data-dir=${userDataDir}`);
+
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
   });
 
   afterEach(async function () {
@@ -37,20 +51,20 @@ describe('Selenium Steps with Screenshots', function () {
     addContext(this, { title: 'Step 2: Window Resized', value: img });
 
     await driver.findElement(By.linkText("QShows»")).click();
-    img = await saveScreenshot(driver, 'step_3_clicked_QShows');
-    addContext(this, { title: 'Step 3: Clicked QShows»', value: img });
+    img = await saveScreenshot(driver, 'step_3_clicked_qshows');
+    addContext(this, { title: 'Step 3: Clicked QShows» Link', value: img });
 
     await driver.sleep(2000);
     img = await saveScreenshot(driver, 'step_4_after_sleep_2000_1');
-    addContext(this, { title: 'Step 4: After Sleep 2s', value: img });
+    addContext(this, { title: 'Step 4: After 2 seconds sleep', value: img });
 
     await driver.findElement(By.linkText("Home")).click();
-    img = await saveScreenshot(driver, 'step_5_clicked_Home');
-    addContext(this, { title: 'Step 5: Clicked Home', value: img });
+    img = await saveScreenshot(driver, 'step_5_clicked_home');
+    addContext(this, { title: 'Step 5: Clicked Home Link', value: img });
 
     await driver.sleep(2000);
     img = await saveScreenshot(driver, 'step_6_after_sleep_2000_2');
-    addContext(this, { title: 'Step 6: After Sleep 2s Again', value: img });
+    addContext(this, { title: 'Step 6: After another 2 seconds sleep', value: img });
 
     await driver.executeScript("window.scrollTo(0,290.3999938964844)");
     img = await saveScreenshot(driver, 'step_7_scrolled_290');
@@ -73,12 +87,12 @@ describe('Selenium Steps with Screenshots', function () {
     addContext(this, { title: 'Step 11: Scrolled to 3139px', value: img });
 
     await driver.findElement(By.linkText("API Details »")).click();
-    img = await saveScreenshot(driver, 'step_12_clicked_API_Details');
-    addContext(this, { title: 'Step 12: Clicked API Details', value: img });
+    img = await saveScreenshot(driver, 'step_12_clicked_api_details');
+    addContext(this, { title: 'Step 12: Clicked API Details » Link', value: img });
 
     await driver.sleep(2000);
     img = await saveScreenshot(driver, 'step_13_after_sleep_2000_3');
-    addContext(this, { title: 'Step 13: After Sleep 2s', value: img });
+    addContext(this, { title: 'Step 13: After 2 seconds sleep', value: img });
 
     await driver.executeScript("window.scrollTo(0,490.3999938964844)");
     img = await saveScreenshot(driver, 'step_14_scrolled_490');
@@ -86,8 +100,9 @@ describe('Selenium Steps with Screenshots', function () {
 
     await driver.findElement(By.linkText("https://quotes.rest")).click();
     img = await saveScreenshot(driver, 'step_15_clicked_quotes_rest');
-    addContext(this, { title: 'Step 15: Clicked quotes.rest link', value: img });
+    addContext(this, { title: 'Step 15: Clicked https://quotes.rest Link', value: img });
 
-    // No need to close the driver here since afterEach does it
+    // If you want to close the driver manually here you can but afterEach will quit it anyway
+    // await driver.close();
   });
 });
