@@ -1,4 +1,4 @@
-require('chromedriver'); // <-- Must be first!
+require('chromedriver');  // <-- Ensure ChromeDriver is loaded
 
 const { Builder, By } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
@@ -10,7 +10,7 @@ let driver;
 
 before(async function () {
   this.timeout(20000);
-  // Kill lingering Chrome processes (safe in CI)
+
   if (process.platform !== 'win32') {
     try {
       execSync('pkill -f chrome');
@@ -19,19 +19,12 @@ before(async function () {
     }
   }
 
-  // Chrome options
   const options = new chrome.Options();
   options.addArguments(
-    '--headless',
-    '--no-sandbox',
-    '--disable-dev-shm-usage',
-    '--window-size=1920,1080'
+    '--headless', '--no-sandbox', '--disable-dev-shm-usage', '--window-size=1920,1080'
   );
 
-  driver = await new Builder()
-    .forBrowser('chrome')
-    .setChromeOptions(options)
-    .build();
+  driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
 });
 
 after(async function () {
@@ -51,19 +44,19 @@ async function attachScreenshot(ctx) {
   const folder = path.resolve('mochawesome-report/screenshots');
   fs.mkdirSync(folder, { recursive: true });
 
-  const file = sanitizeName(title);
-  const fullPath = path.join(folder, file);
+  const fileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+  const fullPath = path.join(folder, fileName);
   fs.writeFileSync(fullPath, data, 'base64');
 
-  ctx.attachments = ctx.attachments || [];
-  ctx.attachments.push({
-    name: 'Screenshot',
-    type: 'image/png',
-    path: `screenshots/${file}`
-  });
+  // Attach screenshot to Mochawesome using 'this.attach'
+  if (typeof ctx.attach === 'function') {
+    ctx.attach(fs.readFileSync(fullPath), 'image/png');
+  } else {
+    ctx.test.context = `![Screenshot](screenshots/${fileName})`;
+  }
 }
 
-describe('Test with embedded screenshots', function () {
+describe('Selenium Multi-Step Test with Multiple Screenshots', function () {
   this.timeout(30000);
 
   it('Step 1: Open homepage', async function () {
@@ -85,13 +78,13 @@ describe('Test with embedded screenshots', function () {
     await attachScreenshot(this);
   });
 
-  it('Step 4: Check page title', async function () {
+  it('Step 4: Get title', async function () {
     const title = await driver.getTitle();
     console.log('Title:', title);
     await attachScreenshot(this);
   });
 
-  it('Step 5: Footer view', async function () {
+  it('Step 5: Hover over footer', async function () {
     try {
       const footer = await driver.findElement(By.css('footer'));
       await driver.executeScript('arguments[0].scrollIntoView(true);', footer);
@@ -102,7 +95,7 @@ describe('Test with embedded screenshots', function () {
     }
   });
 
-  it('Step 6: Final snapshot', async function () {
+  it('Step 6: Final screenshot', async function () {
     await attachScreenshot(this);
   });
 });
