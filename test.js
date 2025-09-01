@@ -1,42 +1,28 @@
 const { Builder, By } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
 
 let driver;
 
-// Utility to create filename-safe image names
-function sanitizeFilename(title) {
-  return title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
-}
-
-// Take a screenshot and attach it to the Mochawesome report
+// Attach screenshot as base64 embedded image to Mochawesome report
 async function attachScreenshot(ctx) {
   const title = ctx?.test?.title || 'screenshot';
-  const data = await driver.takeScreenshot();
-  const folder = path.resolve('mochawesome-report/screenshots');
-  fs.mkdirSync(folder, { recursive: true });
+  const screenshotBase64 = await driver.takeScreenshot();
 
-  const fileName = sanitizeFilename(title);
-  const fullPath = path.join(folder, fileName);
-  fs.writeFileSync(fullPath, data, 'base64');
-
-  // Attach screenshot metadata to the test context for Mochawesome
   ctx.attachments = ctx.attachments || [];
   ctx.attachments.push({
-    name: 'Screenshot',
+    name: title + ' - Screenshot',
     type: 'image/png',
-    path: `screenshots/${fileName}`,
+    data: screenshotBase64,
+    encoding: 'base64',
   });
 }
 
 describe('Test with embedded screenshots', function () {
-  // Setup before tests run
   before(async function () {
     this.timeout(20000);
 
-    // Optional: kill lingering Chrome processes (safe in CI)
+    // Kill lingering Chrome processes (optional, for CI environments)
     if (process.platform !== 'win32') {
       try {
         execSync('pkill -f chrome');
@@ -59,7 +45,6 @@ describe('Test with embedded screenshots', function () {
       .build();
   });
 
-  // Your actual tests with screenshot at every step
   describe('🧪 Selenium Test with Embedded Screenshots', function () {
     this.timeout(30000);
 
@@ -104,7 +89,6 @@ describe('Test with embedded screenshots', function () {
     });
   });
 
-  // Close browser after tests
   after(async function () {
     if (driver) {
       await driver.quit();
