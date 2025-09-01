@@ -1,3 +1,5 @@
+require('chromedriver-autoinstaller').install(); // 🔧 Automatically download the matching ChromeDriver
+
 const { Builder, By } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
@@ -6,12 +8,12 @@ const { execSync } = require('child_process');
 
 let driver;
 
-// Clean filename for screenshots
+// Utility to create safe filenames for screenshots
 function sanitizeFilename(title) {
   return title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
 }
 
-// Attach screenshot to the Mochawesome report
+// Capture screenshot and attach to test context (for mochawesome)
 async function attachScreenshot(ctx) {
   const title = ctx?.test?.title || 'screenshot';
   const screenshot = await driver.takeScreenshot();
@@ -32,9 +34,9 @@ async function attachScreenshot(ctx) {
   });
 }
 
-// Start of test suite
+// Main test suite
 describe('Test with embedded screenshots', function () {
-  // Setup
+  // Setup before all tests
   before(async function () {
     this.timeout(20000);
 
@@ -57,7 +59,7 @@ describe('Test with embedded screenshots', function () {
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
   });
 
-  // Actual Tests
+  // Individual tests
   describe('🧪 Selenium Test with Embedded Screenshots', function () {
     this.timeout(30000);
 
@@ -102,7 +104,7 @@ describe('Test with embedded screenshots', function () {
     });
   });
 
-  // Teardown
+  // Teardown after all tests
   after(async function () {
     if (driver) {
       await driver.quit();
