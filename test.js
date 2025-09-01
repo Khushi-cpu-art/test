@@ -1,4 +1,4 @@
-const { Builder, By, ServiceBuilder } = require('selenium-webdriver');
+const { Builder, By } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const chromedriver = require('chromedriver');
 
@@ -20,10 +20,12 @@ describe('Selenium + Mochawesome Test', function () {
   this.timeout(30000);
 
   before(async function () {
-    const service = new ServiceBuilder(chromedriver.path);
+    // Use chrome.ServiceBuilder from chrome module
+    const serviceBuilder = new chrome.ServiceBuilder(chromedriver.path);
+
     const options = new chrome.Options();
     options.addArguments(
-      '--headless=new',          // Use new headless mode; fallback to '--headless' if needed
+      '--headless=new',
       '--window-size=1920,1080',
       '--no-sandbox',
       '--disable-dev-shm-usage'
@@ -31,7 +33,7 @@ describe('Selenium + Mochawesome Test', function () {
 
     driver = await new Builder()
       .forBrowser('chrome')
-      .setChromeService(service)
+      .setChromeService(serviceBuilder)
       .setChromeOptions(options)
       .build();
   });
