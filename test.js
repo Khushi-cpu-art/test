@@ -1,7 +1,6 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder, By, ServiceBuilder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const chromedriver = require('chromedriver');
-const { ServiceBuilder } = require('selenium-webdriver/chrome');
 
 let driver;
 
@@ -9,12 +8,12 @@ async function attachScreenshot(ctx) {
   const screenshotBase64 = await driver.takeScreenshot();
   ctx.attachments = ctx.attachments || [];
   ctx.attachments.push({
-    name: `${ctx.test.title} - Screenshot`,
+    name: (ctx?.test?.title || 'screenshot') + ' - Screenshot',
     type: 'image/png',
     data: screenshotBase64,
     encoding: 'base64',
   });
-  console.log(`Screenshot taken for: ${ctx.test.title}`);
+  console.log(`Screenshot taken for: ${ctx?.test?.title}`);
 }
 
 describe('Selenium + Mochawesome Test', function () {
@@ -22,23 +21,19 @@ describe('Selenium + Mochawesome Test', function () {
 
   before(async function () {
     const service = new ServiceBuilder(chromedriver.path);
-    const options = new chrome.Options()
-      .headless()
-      .windowSize({ width: 1920, height: 1080 })
-      .addArguments('--no-sandbox', '--disable-dev-shm-usage');
+    const options = new chrome.Options();
+    options.addArguments(
+      '--headless=new',          // Use new headless mode; fallback to '--headless' if needed
+      '--window-size=1920,1080',
+      '--no-sandbox',
+      '--disable-dev-shm-usage'
+    );
 
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeService(service)
       .setChromeOptions(options)
       .build();
-  });
-
-  after(async function () {
-    if (driver) {
-      await driver.quit();
-      console.log('Browser closed');
-    }
   });
 
   it('Open example.com and take screenshot', async function () {
@@ -56,5 +51,12 @@ describe('Selenium + Mochawesome Test', function () {
     const title = await driver.getTitle();
     console.log('Page title:', title);
     await attachScreenshot(this);
+  });
+
+  after(async function () {
+    if (driver) {
+      await driver.quit();
+      console.log('Browser closed');
+    }
   });
 });
