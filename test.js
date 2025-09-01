@@ -5,26 +5,22 @@ const chromedriver = require('chromedriver');
 let driver;
 
 async function attachScreenshot(ctx) {
-  try {
-    const base64 = await driver.takeScreenshot();
-    ctx.attachments = ctx.attachments || [];
-    ctx.attachments.push({
-      name: ctx.test.title + ' - Screenshot',
-      type: 'image/png',
-      data: base64,
-      encoding: 'base64',
-    });
-    console.log(`Screenshot attached: ${ctx.test.title}`);
-  } catch (e) {
-    console.error('Error taking screenshot:', e);
-  }
+  const base64 = await driver.takeScreenshot();
+  ctx.attachments = ctx.attachments || [];
+  ctx.attachments.push({
+    name: ctx.test.title + ' - Screenshot',
+    type: 'image/png',
+    data: base64,
+    encoding: 'base64',
+  });
+  console.log(`Screenshot attached: ${ctx.test.title}`);
 }
 
 describe('Selenium + Mochawesome with manual ChromeDriver', function () {
   this.timeout(30000);
 
   before(async () => {
-    const service = new chrome.ServiceBuilder(chromedriver.path).build();
+    const serviceBuilder = new chrome.ServiceBuilder(chromedriver.path);
 
     const options = new chrome.Options();
     options.addArguments(
@@ -37,7 +33,7 @@ describe('Selenium + Mochawesome with manual ChromeDriver', function () {
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(options)
-      .setChromeService(service)  // Pass the service here instead of setDefaultService
+      .setChromeService(serviceBuilder)  // Correct usage here
       .build();
   });
 
