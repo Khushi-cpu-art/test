@@ -26,28 +26,27 @@ jobs:
       - name: Show Chrome version
         run: google-chrome --version
 
-      - name: Clean up old Chrome sessions
-        run: |
-          pkill -f chrome || true
-          pkill -f chromedriver || true
-          rm -rf /tmp/chrome* || true
-
       - name: Install dependencies
         run: npm install
 
       - name: Run Selenium test
         run: npm test
 
-      # Removed screenshot upload step since screenshots are embedded as base64 inside report
-
       - name: Upload Mochawesome HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mochawesome-report
-          path: mochawesome-report/report.html  # <-- match your mochawesome reportFilename
+          path: mochawesome-report/report.html
 
-      - name: Email report
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: mochawesome-report/screenshots/*.png
+
+      - name: Email report and screenshots
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
@@ -61,8 +60,9 @@ jobs:
           body: |
             Hello,
             Your Selenium test has completed.
-            The HTML report is attached (screenshots are embedded inside the report).
+            The HTML report and screenshots are attached.
             Regards,
             GitHub Actions
           attachments: |
             mochawesome-report/report.html
+            mochawesome-report/screenshots/*.png
