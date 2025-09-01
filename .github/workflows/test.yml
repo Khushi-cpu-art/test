@@ -38,21 +38,16 @@ jobs:
       - name: Run Selenium test
         run: npm test
 
-      - name: Upload all screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: screenshots
-          path: mochawesome-report/screenshots/*.png
+      # Removed screenshot upload step since screenshots are embedded as base64 inside report
 
       - name: Upload Mochawesome HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mochawesome-report
-          path: mochawesome-report/mochawesome.html
+          path: mochawesome-report/report.html  # <-- match your mochawesome reportFilename
 
-      - name: Email report and screenshots
+      - name: Email report
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
@@ -66,9 +61,8 @@ jobs:
           body: |
             Hello,
             Your Selenium test has completed.
-            The HTML report and screenshots are attached.
+            The HTML report is attached (screenshots are embedded inside the report).
             Regards,
             GitHub Actions
           attachments: |
-            mochawesome-report/mochawesome.html
-            mochawesome-report/screenshots/*.png
+            mochawesome-report/report.html
