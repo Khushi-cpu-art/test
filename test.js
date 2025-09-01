@@ -1,60 +1,88 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
+const addContext = require('mochawesome/addContext');
 
 let driver;
 
 async function attachScreenshot(ctx) {
-  const screenshotBase64 = await driver.takeScreenshot();
-  const screenshotDir = path.resolve('mochawesome-report', 'screenshots');
-  fs.mkdirSync(screenshotDir, { recursive: true });
+  const screenshot = await driver.takeScreenshot();
+  const dir = path.resolve('mochawesome-report', 'screenshots');
+  fs.mkdirSync(dir, { recursive: true });
 
-  const fileName = ctx.test.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
-  const filePath = path.join(screenshotDir, fileName);
+  const fileName = (ctx.test.title || 'screenshot').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+  const filePath = path.join(dir, fileName);
+  fs.writeFileSync(filePath, screenshot, 'base64');
 
-  fs.writeFileSync(filePath, screenshotBase64, 'base64');
-  await new Promise(r => setTimeout(r, 200));
-
-  ctx.test.context = ctx.test.context || [];
-  ctx.test.context.push({
+  // Attach to report
+  addContext(ctx, {
     title: 'Screenshot',
-    value: `![${ctx.test.title}](./screenshots/${fileName})`
+    value: `./screenshots/${fileName}`
   });
-  console.log(`Saved screenshot: ${fileName}`);
 }
 
-describe('Selenium + Mochawesome Multi-Step Test', function () {
+describe('🔍 Selenium Test - 10 Distinct Steps with Screenshots', function () {
   this.timeout(60000);
 
   before(async function () {
     const options = new chrome.Options();
     options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage', '--window-size=1280,800');
 
-    driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(options)
-      .build();
-  });
-
-  const steps = [
-    { action: async () => await driver.get('https://theysaidso.com'), name: 'Open homepage' },
-    { action: async () => await driver.executeScript('window.scrollBy(0, 300)'), name: 'Scroll down a bit' },
-    { action: async () => await driver.executeScript('window.scrollBy(0, 600)'), name: 'Scroll down more' },
-    { action: async () => await driver.executeScript('window.scrollTo(0, 0)'), name: 'Scroll to top' },
-    { action: async () => { const t = await driver.getTitle(); console.log('Title:', t); }, name: 'Capture title' },
-    { action: async () => await driver.findElement(By.tagName('h1')), name: 'Find h1 tag if present' }
-  ];
-
-  steps.forEach((step, index) => {
-    it(`Step ${index + 1}: ${step.name}`, async function () {
-      await step.action();
-      await attachScreenshot(this);
-    });
+    driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
   });
 
   after(async function () {
     if (driver) await driver.quit();
-    console.log('Browser closed');
+  });
+
+  it('Step 1: Load homepage', async function () {
+    await driver.get('https://theysaidso.com');
+    await attachScreenshot(this);
+  });
+
+  it('Step 2: Scroll 300px', async function () {
+    await driver.executeScript('window.scrollBy(0, 300)');
+    await attachScreenshot(this);
+  });
+
+  it('Step 3: Scroll another 500px', async function () {
+    await driver.executeScript('window.scrollBy(0, 500)');
+    await attachScreenshot(this);
+  });
+
+  it('Step 4: Scroll to top', async function () {
+    await driver.executeScript('window.scrollTo(0, 0)');
+    await attachScreenshot(this);
+  });
+
+  it('Step 5: Resize window', async function () {
+    await driver.manage().window().setRect({ width: 1024, height: 600 });
+    await attachScreenshot(this);
+  });
+
+  it('Step 6: Change viewport again', async function () {
+    await driver.manage().window().setRect({ width: 800, height: 1000 });
+    await attachScreenshot(this);
+  });
+
+  it('Step 7: Scroll to bottom', async function () {
+    await driver.executeScript('window.scrollTo(0, document.body.scrollHeight)');
+    await attachScreenshot(this);
+  });
+
+  it('Step 8: Scroll back up slightly', async function () {
+    await driver.executeScript('window.scrollBy(0, -200)');
+    await attachScreenshot(this);
+  });
+
+  it('Step 9: Capture title', async function () {
+    const title = await driver.getTitle();
+    console.log('Page Title:', title);
+    await attachScreenshot(this);
+  });
+
+  it('Step 10: Final snapshot', async function () {
+    await attachScreenshot(this);
   });
 });
