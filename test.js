@@ -1,112 +1,75 @@
 const { Builder, By } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const assert = require('assert');
 
-let driver;
-
-// Utility to create filename-safe image names
-function sanitizeFilename(title) {
-  return title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
-}
-
-// Take a screenshot and attach it to the Mochawesome report
-async function attachScreenshot(ctx) {
-  const title = ctx?.test?.title || 'screenshot';
-  const screenshot = await driver.takeScreenshot();
-
-  const screenshotDir = path.resolve('mochawesome-report/screenshots');
-  fs.mkdirSync(screenshotDir, { recursive: true });
-
-  const filename = sanitizeFilename(title);
-  const filepath = path.join(screenshotDir, filename);
-
-  fs.writeFileSync(filepath, screenshot, 'base64');
-
-  // Attach screenshot metadata to the test context for Mochawesome
-  ctx.attachments = ctx.attachments || [];
-  ctx.attachments.push({
-    name: 'Screenshot',
-    type: 'image/png',
-    path: `screenshots/${filename}`,
-  });
-}
-
-// Setup before tests run
-before(async function () {
-  this.timeout(20000);
-
-  // Optional: kill lingering Chrome processes (safe in CI)
-  if (process.platform !== 'win32') {
-    try {
-      execSync('pkill -f chrome');
-    } catch (err) {
-      console.log('⚠️ No Chrome processes found or pkill not supported. Continuing.');
-    }
-  }
-
-  const options = new chrome.Options();
-  options.addArguments(
-    '--headless',
-    '--no-sandbox',
-    '--disable-dev-shm-usage',
-    '--window-size=1920,1080'
-  );
-
-  driver = await new Builder()
-    .forBrowser('chrome')
-    .setChromeOptions(options)
-    .build();
-});
-
-// Your actual tests with screenshot at every step
-describe('🧪 Selenium Test with Embedded Screenshots', function () {
+describe('Selenium + Mochawesome embedded screenshots test', function () {
   this.timeout(30000);
 
-  it('Step 1: Open homepage', async function () {
-    await driver.get('https://theysaidso.com');
-    await attachScreenshot(this);
-  });
+  let driver;
+  // Attachments array used by mochawesome to embed files in report
+  const attachments = [];
 
-  it('Step 2: Scroll down', async function () {
-    await driver.executeScript('window.scrollBy(0, 800)');
-    await new Promise((r) => setTimeout(r, 1000));
-    await attachScreenshot(this);
-  });
+  before(async function () {
+    driver = await new Builder().forBrowser('chrome').build();
 
-  it('Step 3: Scroll to top', async function () {
-    await driver.executeScript('window.scrollTo(0, 0)');
-    await new Promise((r) => setTimeout(r, 1000));
-    await attachScreenshot(this);
-  });
-
-  it('Step 4: Check page title', async function () {
-    const title = await driver.getTitle();
-    console.log('Title:', title);
-    await attachScreenshot(this);
-  });
-
-  it('Step 5: Footer view', async function () {
-    try {
-      const footer = await driver.findElement(By.css('footer'));
-      await driver.executeScript('arguments[0].scrollIntoView(true);', footer);
-      await new Promise((r) => setTimeout(r, 1000));
-      await attachScreenshot(this);
-    } catch (err) {
-      console.log('Footer not found. Skipping...');
+    // Ensure screenshots dir exists
+    const screenshotsDir = path.resolve(__dirname, 'mochawesome-report', 'screenshots');
+    if (!fs.existsSync(screenshotsDir)) {
+      fs.mkdirSync(screenshotsDir, { recursive: true });
     }
   });
 
-  it('Step 6: Final snapshot', async function () {
-    await attachScreenshot(this);
+  after(async function () {
+    if (driver) await driver.quit();
   });
-});
 
-// Close browser after tests
-after(async function () {
-  if (driver) {
-    await driver.quit();
-    console.log('✅ Chrome closed');
-  }
+  it('should open Google and take screenshots with embedded attachments', async function () {
+    // Navigate to Google
+    await driver.get('https://www.google.com');
+
+    // Take first screenshot
+    const screenshot1 = await driver.takeScreenshot();
+    const filename1 = 'step_1.png';
+    const filepath1 = path.resolve(__dirname, 'mochawesome-report', 'screenshots', filename1);
+    fs.writeFileSync(filepath1, screenshot1, 'base64');
+
+    // Add attachment for mochawesome report generator
+    attachments.push({
+      name: 'Screenshot Step 1',
+      type: 'image/png',
+      path: `screenshots/${filename1}`, // relative to mochawesome-report folder
+    });
+
+    // Search for "Mochawesome"
+    const searchBox = await driver.findElement(By.name('q'));
+    await searchBox.sendKeys('Mochawesome');
+    await searchBox.submit();
+
+    // Wait for results
+    await driver.sleep(2000);
+
+    // Take second screenshot
+    const screenshot2 = await driver.takeScreenshot();
+    const filename2 = 'step_2.png';
+    const filepath2 = path.resolve(__dirname, 'mochawesome-report', 'screenshots', filename2);
+    fs.writeFileSync(filepath2, screenshot2, 'base64');
+
+    attachments.push({
+      name: 'Screenshot Step 2',
+      type: 'image/png',
+      path: `screenshots/${filename2}`,
+    });
+
+    // Simple assertion example (page title contains 'Mochawesome')
+    const title = await driver.getTitle();
+    assert(title.toLowerCase().includes('mochawesome'));
+  });
+
+  // Tell mochawesome about the attachments by attaching to the test context
+  afterEach(function () {
+    if (attachments.length) {
+      this.attachments = attachments;
+    }
+  });
 });
