@@ -4,6 +4,87 @@ const fs = require('fs');
 const path = require('path');
 
 let driver;
+const { Builder, By } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
+const fs = require('fs');
+const path = require('path');
+
+let driver;
+
+// Helper to save screenshots and embed in mochawesome report
+async function attachScreenshot(ctx, stepName) {
+  const screenshotDir = path.resolve('mochawesome-report/screenshots');
+  fs.mkdirSync(screenshotDir, { recursive: true });
+
+  const fileName = stepName.replace(/\s+/g, '_').toLowerCase() + '.png';
+  const filePath = path.join(screenshotDir, fileName);
+
+  const screenshot = await driver.takeScreenshot();
+  fs.writeFileSync(filePath, screenshot, 'base64');
+
+  // Embed image in HTML report
+  ctx.test.context = ctx.test.context || [];
+  ctx.test.context.push(`![${stepName}](./screenshots/${fileName})`);
+}
+
+describe('📸 Selenium Multi-Step Test with Multiple Screenshots', function () {
+  this.timeout(30000);
+
+  before(async () => {
+    const options = new chrome.Options();
+    options.addArguments('--headless', '--disable-gpu', '--no-sandbox', '--window-size=1280,800');
+
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(options)
+      .build();
+  });
+
+  it('Step 1: Open homepage', async function () {
+    await driver.get('https://theysaidso.com');
+    await attachScreenshot(this, 'Step 1 - Open homepage');
+  });
+
+  it('Step 2: Scroll down', async function () {
+    await driver.executeScript('window.scrollBy(0, 600)');
+    await new Promise(r => setTimeout(r, 1000));
+    await attachScreenshot(this, 'Step 2 - Scroll down');
+  });
+
+  it('Step 3: Scroll up', async function () {
+    await driver.executeScript('window.scrollTo(0, 0)');
+    await new Promise(r => setTimeout(r, 1000));
+    await attachScreenshot(this, 'Step 3 - Scroll up');
+  });
+
+  it('Step 4: Get title', async function () {
+    const title = await driver.getTitle();
+    console.log('Page Title:', title);
+    await attachScreenshot(this, 'Step 4 - Get title');
+  });
+
+  it('Step 5: Hover over footer', async function () {
+    try {
+      const footer = await driver.findElement(By.css('footer'));
+      await driver.executeScript('arguments[0].scrollIntoView(true);', footer);
+      await new Promise(r => setTimeout(r, 1000));
+      await attachScreenshot(this, 'Step 5 - Hover over footer');
+    } catch (err) {
+      console.log('Footer not found. Skipping screenshot.');
+    }
+  });
+
+  it('Step 6: Final screenshot', async function () {
+    await attachScreenshot(this, 'Step 6 - Final screenshot');
+  });
+
+  after(async () => {
+    if (driver) {
+      await driver.quit();
+      console.log('✅ Browser closed');
+    }
+  });
+});
 
 // Util: Save screenshot & attach to mochawesome context
 async function saveScreenshot(ctx) {
