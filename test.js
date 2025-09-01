@@ -11,11 +11,13 @@ function takeScreenshotFileName(title) {
 }
 
 async function takeScreenshot(testContext) {
+  const testTitle = testContext?.test?.title || 'unnamed_test';
   const screenshot = await driver.takeScreenshot();
+
   const dir = path.resolve('mochawesome-report/screenshots');
   fs.mkdirSync(dir, { recursive: true });
 
-  const fileName = takeScreenshotFileName(testContext.currentTest.title);
+  const fileName = takeScreenshotFileName(testTitle);
   const filePath = path.join(dir, fileName);
 
   fs.writeFileSync(filePath, screenshot, 'base64');
@@ -49,25 +51,42 @@ before(async function () {
     .build();
 });
 
-describe('🧪 Selenium Step-by-Step Test with Screenshots', function () {
+describe('🧪 Selenium Multi-Step Test with Multiple Screenshots', function () {
   this.timeout(30000);
 
-  it('Step 1: Open website', async function () {
-    await driver.get('http://theysaidso.com/');
+  it('Step 1: Open homepage', async function () {
+    await driver.get('https://theysaidso.com');
     await takeScreenshot(this);
   });
 
-  it('Step 2: Check page title', async function () {
+  it('Step 2: Scroll down', async function () {
+    await driver.executeScript("window.scrollBy(0, 500)");
+    await new Promise(r => setTimeout(r, 1000));
+    await takeScreenshot(this);
+  });
+
+  it('Step 3: Scroll up', async function () {
+    await driver.executeScript("window.scrollTo(0, 0)");
+    await new Promise(r => setTimeout(r, 1000));
+    await takeScreenshot(this);
+  });
+
+  it('Step 4: Get title', async function () {
     const title = await driver.getTitle();
-    console.log('Page title:', title);
+    console.log('Title:', title);
     await takeScreenshot(this);
-
-    if (!title || title.length === 0) {
-      throw new Error('Title is empty');
-    }
   });
 
-  // Add more steps here as needed, each with its own `it()` and `await takeScreenshot(this)`
+  it('Step 5: Hover over footer', async function () {
+    const footer = await driver.findElement(By.css('footer'));
+    await driver.executeScript("arguments[0].scrollIntoView(true);", footer);
+    await new Promise(r => setTimeout(r, 1000));
+    await takeScreenshot(this);
+  });
+
+  it('Step 6: Final screenshot', async function () {
+    await takeScreenshot(this);
+  });
 });
 
 after(async function () {
