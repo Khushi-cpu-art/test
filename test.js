@@ -13,17 +13,15 @@ async function attachScreenshot(ctx) {
     data: base64,
     encoding: 'base64',
   });
-  console.log(`Screenshot attached: ${ctx.test.title}`);
+  console.log(`Screenshot attached for: ${ctx.test.title}`);
 }
 
-describe('Selenium + Mochawesome with manual ChromeDriver', function () {
+describe('Selenium + Mochawesome Tests', function () {
   this.timeout(30000);
 
   before(async () => {
     const serviceBuilder = new chrome.ServiceBuilder(chromedriver.path);
-
-    const options = new chrome.Options();
-    options.addArguments(
+    const options = new chrome.Options().addArguments(
       '--headless',
       '--no-sandbox',
       '--disable-dev-shm-usage',
@@ -33,24 +31,24 @@ describe('Selenium + Mochawesome with manual ChromeDriver', function () {
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(options)
-      .setChromeService(serviceBuilder)  // Correct usage here
+      .setChromeService(serviceBuilder)
       .build();
   });
 
-  it('Navigate to example.com and screenshot', async function () {
+  it('Open example.com and screenshot', async function () {
     await driver.get('https://example.com');
     await attachScreenshot(this);
   });
 
-  it('Scroll and screenshot', async function () {
+  it('Scroll down and screenshot', async function () {
     await driver.executeScript('window.scrollBy(0, 300)');
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1000));
     await attachScreenshot(this);
   });
 
-  it('Get title and screenshot', async function () {
+  it('Get page title and screenshot', async function () {
     const title = await driver.getTitle();
-    console.log('Title:', title);
+    console.log('Page title:', title);
     await attachScreenshot(this);
   });
 
