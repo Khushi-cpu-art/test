@@ -19,18 +19,20 @@ async function attachScreenshot(ctx) {
 }
 
 describe('Test with embedded screenshots', function () {
+  // Setup before tests run
   before(async function () {
     this.timeout(20000);
 
-    // Kill lingering Chrome processes (optional, for CI environments)
+    // Kill lingering Chrome processes (optional for CI)
     if (process.platform !== 'win32') {
       try {
         execSync('pkill -f chrome');
-      } catch (err) {
-        console.log('⚠️ No Chrome processes found or pkill not supported. Continuing.');
+      } catch {
+        console.log('⚠️ No Chrome processes found or pkill not supported. Continuing...');
       }
     }
 
+    // Chrome options for headless test
     const options = new chrome.Options();
     options.addArguments(
       '--headless',
@@ -89,6 +91,7 @@ describe('Test with embedded screenshots', function () {
     });
   });
 
+  // Clean up after tests
   after(async function () {
     if (driver) {
       await driver.quit();
