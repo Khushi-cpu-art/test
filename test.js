@@ -4,10 +4,6 @@ const chromedriver = require('chromedriver');
 
 let driver;
 
-// Setup ChromeDriver service manually
-const service = new chrome.ServiceBuilder(chromedriver.path).build();
-chrome.setDefaultService(service);
-
 async function attachScreenshot(ctx) {
   try {
     const base64 = await driver.takeScreenshot();
@@ -28,6 +24,8 @@ describe('Selenium + Mochawesome with manual ChromeDriver', function () {
   this.timeout(30000);
 
   before(async () => {
+    const service = new chrome.ServiceBuilder(chromedriver.path).build();
+
     const options = new chrome.Options();
     options.addArguments(
       '--headless',
@@ -35,9 +33,11 @@ describe('Selenium + Mochawesome with manual ChromeDriver', function () {
       '--disable-dev-shm-usage',
       '--window-size=1920,1080'
     );
+
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(options)
+      .setChromeService(service)  // Pass the service here instead of setDefaultService
       .build();
   });
 
