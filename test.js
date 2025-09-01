@@ -1,31 +1,39 @@
-const { Builder, By } = require('selenium-webdriver');
+const { Builder } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const chromedriver = require('chromedriver');
+const fs = require('fs');
+const path = require('path');
 
 let driver;
 
 async function attachScreenshot(ctx) {
   const screenshotBase64 = await driver.takeScreenshot();
-  ctx.attachments = ctx.attachments || [];
-  ctx.attachments.push({
-    name: (ctx?.test?.title || 'screenshot') + ' - Screenshot',
-    type: 'image/png',
-    data: screenshotBase64,
-    encoding: 'base64',
-  });
-  console.log(`Screenshot taken for: ${ctx?.test?.title}`);
+  const screenshotDir = path.resolve(__dirname, 'mochawesome-report', 'screenshots');
+
+  if (!fs.existsSync(screenshotDir)) {
+    fs.mkdirSync(screenshotDir, { recursive: true });
+  }
+
+  const fileName = ctx?.test?.title.replace(/[^a-z0-9\-]/gi, '_').toLowerCase() + '.png';
+  const filePath = path.join(screenshotDir, fileName);
+
+  fs.writeFileSync(filePath, screenshotBase64, 'base64');
+
+  // Attach screenshot path for Mochawesome report
+  ctx.test.context = ctx.test.context || [];
+  ctx.test.context.push(`![Screenshot](./screenshots/${fileName})`);
+
+  console.log(`Screenshot saved: ${filePath}`);
 }
 
 describe('Selenium + Mochawesome Test', function () {
   this.timeout(30000);
 
   before(async function () {
-    // Use chrome.ServiceBuilder from chrome module
     const serviceBuilder = new chrome.ServiceBuilder(chromedriver.path);
-
     const options = new chrome.Options();
     options.addArguments(
-      '--headless=new',
+      '--headless=new',           // Chrome headless mode
       '--window-size=1920,1080',
       '--no-sandbox',
       '--disable-dev-shm-usage'
