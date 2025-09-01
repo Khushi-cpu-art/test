@@ -5,30 +5,31 @@ const path = require('path');
 
 let driver;
 
-// Attach screenshot to the test context (mochawesome will embed it)
 async function attachScreenshot(ctx) {
-  const screenshot = await driver.takeScreenshot();
-  ctx.attachments = ctx.attachments || [];
-  ctx.attachments.push({
-    name: `${ctx.test.title} - Screenshot`,
-    type: 'image/png',
-    data: screenshot,
-    encoding: 'base64',
+  const screenshotBase64 = await driver.takeScreenshot();
+  const screenshotDir = path.resolve('mochawesome-report', 'screenshots');
+  fs.mkdirSync(screenshotDir, { recursive: true });
+
+  const fileName = ctx.test.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+  const filePath = path.join(screenshotDir, fileName);
+
+  fs.writeFileSync(filePath, screenshotBase64, 'base64');
+  await new Promise(r => setTimeout(r, 200));
+
+  ctx.test.context = ctx.test.context || [];
+  ctx.test.context.push({
+    title: 'Screenshot',
+    value: `![${ctx.test.title}](./screenshots/${fileName})`
   });
-  console.log(`📸 Screenshot captured for: ${ctx.test.title}`);
+  console.log(`Saved screenshot: ${fileName}`);
 }
 
-describe('📷 Selenium Multi-Step Test with Multiple Screenshots', function () {
-  this.timeout(30000); // Increase timeout for slow CI runs
+describe('Selenium + Mochawesome Multi-Step Test', function () {
+  this.timeout(60000);
 
   before(async function () {
     const options = new chrome.Options();
-    options.addArguments(
-      '--headless',
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-      '--window-size=1920,1080'
-    );
+    options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage', '--window-size=1280,800');
 
     driver = await new Builder()
       .forBrowser('chrome')
@@ -36,50 +37,24 @@ describe('📷 Selenium Multi-Step Test with Multiple Screenshots', function () 
       .build();
   });
 
-  it('Step 1: Open homepage', async function () {
-    await driver.get('https://theysaidso.com');
-    await attachScreenshot(this);
-  });
+  const steps = [
+    { action: async () => await driver.get('https://example.com'), name: 'Open homepage' },
+    { action: async () => await driver.executeScript('window.scrollBy(0, 300)'), name: 'Scroll down a bit' },
+    { action: async () => await driver.executeScript('window.scrollBy(0, 600)'), name: 'Scroll down more' },
+    { action: async () => await driver.executeScript('window.scrollTo(0, 0)'), name: 'Scroll to top' },
+    { action: async () => { const t = await driver.getTitle(); console.log('Title:', t); }, name: 'Capture title' },
+    { action: async () => await driver.findElement(By.tagName('h1')), name: 'Find h1 tag if present' }
+  ];
 
-  it('Step 2: Scroll down', async function () {
-    await driver.executeScript('window.scrollBy(0, 600)');
-    await new Promise(r => setTimeout(r, 800));
-    await attachScreenshot(this);
-  });
-
-  it('Step 3: Scroll up', async function () {
-    await driver.executeScript('window.scrollBy(0, -300)');
-    await new Promise(r => setTimeout(r, 800));
-    await attachScreenshot(this);
-  });
-
-  it('Step 4: Get title', async function () {
-    const title = await driver.getTitle();
-    console.log('Page title:', title);
-    await attachScreenshot(this);
-  });
-
-  it('Step 5: Hover over footer (if exists)', async function () {
-    try {
-      const footer = await driver.findElement(By.css('footer'));
-      await driver.executeScript('arguments[0].scrollIntoView(true);', footer);
-      await new Promise(r => setTimeout(r, 1000));
+  steps.forEach((step, index) => {
+    it(`Step ${index + 1}: ${step.name}`, async function () {
+      await step.action();
       await attachScreenshot(this);
-    } catch (err) {
-      console.log('⚠️ Footer not found. Skipping this step.');
-    }
-  });
-
-  it('Step 6: Final screenshot', async function () {
-    await driver.executeScript('window.scrollTo(0, 0)');
-    await new Promise(r => setTimeout(r, 500));
-    await attachScreenshot(this);
+    });
   });
 
   after(async function () {
-    if (driver) {
-      await driver.quit();
-      console.log('✅ Browser closed');
-    }
+    if (driver) await driver.quit();
+    console.log('Browser closed');
   });
 });
