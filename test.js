@@ -38,7 +38,7 @@ describe('Selenium + Mochawesome Multi-Step Test', function () {
   });
 
   const steps = [
-    { action: async () => await driver.get('https://example.com'), name: 'Open homepage' },
+    { action: async () => await driver.get('https://theysaidso.com'), name: 'Open homepage' },
     { action: async () => await driver.executeScript('window.scrollBy(0, 300)'), name: 'Scroll down a bit' },
     { action: async () => await driver.executeScript('window.scrollBy(0, 600)'), name: 'Scroll down more' },
     { action: async () => await driver.executeScript('window.scrollTo(0, 0)'), name: 'Scroll to top' },
