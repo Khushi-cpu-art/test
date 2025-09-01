@@ -4,8 +4,7 @@
   "description": "Automated Selenium tests with Mochawesome HTML reports",
   "main": "test.js",
   "scripts": {
-    "test": "mocha test.js --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=false",
-    "postinstall": "node -e \"require('chromedriver-autoinstall').install()\""
+    "test": "mocha test.js --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=false"
   },
   "keywords": [
     "selenium",
@@ -17,8 +16,8 @@
   ],
   "author": "Your Name",
   "license": "MIT",
-  "dependencies": {
-    "chromedriver-autoinstall": "^1.1.1",
+  "devDependencies": {
+    "chromedriver": "^139.0.0",
     "mocha": "^10.2.0",
     "mochawesome": "^7.1.3",
     "selenium-webdriver": "^4.16.0"
