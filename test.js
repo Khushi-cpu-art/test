@@ -8,7 +8,7 @@ const { execSync } = require('child_process');
 
 let driver;
 
-// Setup before tests
+// Setup before all tests
 before(async function () {
   this.timeout(20000);
 
@@ -30,7 +30,7 @@ before(async function () {
   driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
 });
 
-// Cleanup after tests
+// Cleanup after all tests
 after(async function () {
   if (driver) {
     await driver.quit();
@@ -50,7 +50,7 @@ async function attachScreenshot(ctx) {
   const folder = path.resolve('mochawesome-report/screenshots');
   fs.mkdirSync(folder, { recursive: true });
 
-  const fileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+  const fileName = sanitizeName(title);
   const fullPath = path.join(folder, fileName);
   fs.writeFileSync(fullPath, data, 'base64');
 
