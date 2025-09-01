@@ -3,6 +3,7 @@ const chrome = require('selenium-webdriver/chrome');
 const chromedriver = require('chromedriver');
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 
 let driver;
 
@@ -14,26 +15,27 @@ async function attachScreenshot(ctx) {
     fs.mkdirSync(screenshotDir, { recursive: true });
   }
 
-  const fileName = ctx?.test?.title.replace(/[^a-z0-9\-]/gi, '_').toLowerCase() + '.png';
+  // Clean test title for filename
+  const fileName = ctx.test.title.replace(/[^a-z0-9\-]/gi, '_').toLowerCase() + '.png';
   const filePath = path.join(screenshotDir, fileName);
 
   fs.writeFileSync(filePath, screenshotBase64, 'base64');
 
-  // Attach screenshot path for Mochawesome report
+  // Attach screenshot markdown for Mochawesome HTML report embedding
   ctx.test.context = ctx.test.context || [];
   ctx.test.context.push(`![Screenshot](./screenshots/${fileName})`);
 
   console.log(`Screenshot saved: ${filePath}`);
 }
 
-describe('Selenium + Mochawesome Test', function () {
-  this.timeout(30000);
+describe('Selenium + Mochawesome Test with Multiple Screenshots', function () {
+  this.timeout(60000); // Increase timeout as there are many steps
 
   before(async function () {
     const serviceBuilder = new chrome.ServiceBuilder(chromedriver.path);
     const options = new chrome.Options();
     options.addArguments(
-      '--headless=new',           // Chrome headless mode
+      '--headless=new',
       '--window-size=1920,1080',
       '--no-sandbox',
       '--disable-dev-shm-usage'
@@ -46,20 +48,49 @@ describe('Selenium + Mochawesome Test', function () {
       .build();
   });
 
-  it('Open example.com and take screenshot', async function () {
+  it('Step 1: Open the homepage', async function () {
     await driver.get('https://theysaidso.com');
+    const title = await driver.getTitle();
+    assert.ok(title.length > 0, 'Title should not be empty');
     await attachScreenshot(this);
   });
 
-  it('Scroll down and take screenshot', async function () {
+  it('Step 2: Scroll down 500px', async function () {
     await driver.executeScript('window.scrollBy(0, 500)');
     await new Promise(r => setTimeout(r, 1000));
     await attachScreenshot(this);
   });
 
-  it('Check page title and take screenshot', async function () {
+  it('Step 3: Scroll down further 700px', async function () {
+    await driver.executeScript('window.scrollBy(0, 700)');
+    await new Promise(r => setTimeout(r, 1000));
+    await attachScreenshot(this);
+  });
+
+  it('Step 4: Scroll back to top', async function () {
+    await driver.executeScript('window.scrollTo(0, 0)');
+    await new Promise(r => setTimeout(r, 1000));
+    await attachScreenshot(this);
+  });
+
+  it('Step 5: Check for footer and scroll to it', async function () {
+    try {
+      const footer = await driver.findElement({ css: 'footer' });
+      await driver.executeScript('arguments[0].scrollIntoView(true);', footer);
+      await new Promise(r => setTimeout(r, 1000));
+    } catch (err) {
+      console.log('Footer not found, skipping scroll');
+    }
+    await attachScreenshot(this);
+  });
+
+  it('Step 6: Verify page title content', async function () {
     const title = await driver.getTitle();
-    console.log('Page title:', title);
+    assert.ok(title.toLowerCase().includes('said'), 'Title contains "said"');
+    await attachScreenshot(this);
+  });
+
+  it('Step 7: Final snapshot', async function () {
     await attachScreenshot(this);
   });
 
