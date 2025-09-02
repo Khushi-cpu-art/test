@@ -32,12 +32,13 @@ jobs:
       - name: Run Selenium test
         run: npm test
 
+      # ✅ Upload the full report folder (fix for blank report)
       - name: Upload Mochawesome HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mochawesome-report
-          path: mochawesome-report/report.html
+          path: mochawesome-report
 
       - name: Upload Screenshots
         if: always()
