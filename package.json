@@ -1,21 +1,11 @@
 {
   "name": "selenium-mochawesome-test",
   "version": "1.0.0",
-  "description": "Automated Selenium tests with Mochawesome HTML reports",
+  "description": "Selenium tests with Mochawesome reports",
   "main": "test.js",
   "scripts": {
-    "test": "mocha test.js --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=true"
+    "test": "mocha test.js --timeout 60000 --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=true,overwrite=true"
   },
-  "keywords": [
-    "selenium",
-    "mocha",
-    "mochawesome",
-    "testing",
-    "automation",
-    "chromedriver"
-  ],
-  "author": "khushi",
-  "license": "MIT",
   "devDependencies": {
     "chromedriver": "^139.0.0",
     "mocha": "^10.2.0",
