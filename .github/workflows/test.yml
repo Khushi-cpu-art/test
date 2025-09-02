@@ -1,11 +1,11 @@
 name: Run Selenium Test with Email Report
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   test:
@@ -27,13 +27,12 @@ jobs:
         run: google-chrome --version
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run Selenium test
+      - name: Run Tests
         run: npm test
 
-      # ✅ Upload the full report folder (fix for blank report)
-      - name: Upload Mochawesome HTML Report
+      - name: Upload Full Mochawesome Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
