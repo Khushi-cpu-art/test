@@ -4,7 +4,7 @@
   "description": "Selenium tests with Mochawesome reports",
   "main": "test.js",
   "scripts": {
-    "test": "mocha test.js --timeout 60000 --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=true,overwrite=true"
+    "test": "mocha test.js --timeout 60000 --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=true,overwrite=true,inlineAssets=true"
   },
   "devDependencies": {
     "chromedriver": "^139.0.0",
