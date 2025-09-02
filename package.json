@@ -4,7 +4,7 @@
   "description": "Automated Selenium tests with Mochawesome HTML reports",
   "main": "test.js",
   "scripts": {
-    "test": "mocha test.js --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=false"
+    "test": "mocha test.js --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=report,html=true,json=true"
   },
   "keywords": [
     "selenium",
