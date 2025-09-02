@@ -61,7 +61,7 @@ describe('Selenium + Mochawesome CI Demo', function () {
   this.timeout(30000);
 
   it('Step 1: Open homepage', async function () {
-    await driver.get('https://example.com');
+    await driver.get('https://theysaidso.com');
     await attachScreenshot(this);
   });
 
