@@ -3,9 +3,9 @@ name: Run Selenium Test with Email Report
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ test1 ]
   pull_request:
-    branches: [ main ]
+    branches: [ test1 ]
 
 jobs:
   test:
