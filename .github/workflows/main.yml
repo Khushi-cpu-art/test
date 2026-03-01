@@ -1,0 +1,72 @@
+name: Run Selenium Test with Email Report
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: 🧩 Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: 🔍 Chrome version
+        run: google-chrome --version
+
+      - name: 📦 Install dependencies
+        run: mvn clean install -DskipTests
+
+      - name: 🧪 Run Selenium Tests
+        run: mvn test
+
+      - name: 📤 Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports
+
+      - name: 🖼 Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: target/screenshots
+
+      - name: 📧 Email test report with screenshots
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Selenium Test Results - ${{ github.repository }}
+          to: ${{ secrets.EMAIL_TO }}
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            Hello,
+
+            Your Selenium test has completed.
+
+            Attached are the test report and screenshots.
+
+            Regards,
+            GitHub Actions
+          attachments: |
+            target/surefire-reports/*.xml
+            target/screenshots/*.png
